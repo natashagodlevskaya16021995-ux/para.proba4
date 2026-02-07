@@ -26,7 +26,6 @@
             box-sizing: border-box;
             user-select: none;
             transition: filter .4s ease, transform .18s ease;
-            /* Базовый стиль границы */
             border-style: solid;
         }
 
@@ -75,6 +74,19 @@
     const params = new URLSearchParams(window.location.search);
     const get = (n, d) => { let v = params.get(n); return (v===null||v==='null'||v==='') ? d : v; };
 
+    // =========================================================
+    // 👇 ТВОИ ССЫЛКИ УЖЕ ВСТАВЛЕНЫ СЮДА 👇
+    // =========================================================
+    const DEFAULTS = {
+        winPopup:  'https://media.tenor.com/423qsjyZqSsAAAAi/yes.gif', 
+        losePopup: 'https://media.tenor.com/Va6g-Dh5pSkAAAAi/bunny-nope.gif', 
+        life:      'https://media.tenor.com/iNdYjrgY90MAAAAi/red-heart-bumping.gif', 
+        
+        winScreen: 'https://media.tenor.com/CuKhzQTvzV0AAAAi/%D0%BA%D0%BE%D1%82%D1%91%D0%BD%D0%BE%D0%BA-%D0%B3%D0%B0%D0%B2-kitten-named-woof.gif', 
+        loseScreen:'https://media.tenor.com/I5bwJxpmFAsAAAAi/crying-sad.gif'  
+    };
+    // =========================================================
+
     function shuffle(arr) {
         for (let i = arr.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -83,7 +95,6 @@
         return arr;
     }
 
-    // --- ИСПРАВЛЕННЫЙ БЛОК ШРИФТОВ ---
     const font = get('font', 'Arial');
     const effect = get('effect', '');
 
@@ -113,8 +124,15 @@
         b.style.background = get('pcolor', '#03dac6');
     });
 
-    if(get('wi')) { const i=document.getElementById('wi-img'); i.src=get('wi'); i.style.display='block'; }
-    if(get('li')) { const i=document.getElementById('li-img'); i.src=get('li'); i.style.display='block'; }
+    const finalWinImg = get('wi') || DEFAULTS.winScreen;
+    if(finalWinImg) { 
+        const i=document.getElementById('wi-img'); i.src=finalWinImg; i.style.display='block'; 
+    }
+
+    const finalLoseImg = get('li') || DEFAULTS.loseScreen;
+    if(finalLoseImg) { 
+        const i=document.getElementById('li-img'); i.src=finalLoseImg; i.style.display='block'; 
+    }
 
     let allData = [];
     try {
@@ -135,10 +153,13 @@
     const cSize = parseInt(get('csize', 140));
 
     document.getElementById('p-bar').style.backgroundColor = get('pcolor', '#03dac6');
+    
+    const lifeUrl = get('lifeimg') || DEFAULTS.life;
     const lDiv = document.getElementById('lives');
-    for(let i=0; i<3; i++) lDiv.innerHTML += `<div class="life" style="background-image:url('${get('lifeimg','')}')"></div>`;
+    if (lifeUrl) {
+        for(let i=0; i<3; i++) lDiv.innerHTML += `<div class="life" style="background-image:url('${lifeUrl}')"></div>`;
+    }
 
-    // ✅ ЗВУКИ (КАСТОМНЫЕ + СТАНДАРТНЫЕ)
     const SOUND_BASE = "https://natashagodlevskaya16021995-ux.github.io/para.proba4/sounds/";
     function playSound(file) {
         try {
@@ -256,15 +277,12 @@
     const bounds0 = getBounds();
     const placed = [];
 
-    // --- НОВАЯ ЛОГИКА: КАРТИНКА ИЛИ РАМКА ---
     const bgImgUrl = get('cimg','');
     let cardStyleBase = '';
 
     if (bgImgUrl) {
-        // Если ссылка на фон есть -> старый режим (картинка)
         cardStyleBase = `background-image:url('${bgImgUrl}'); border:none;`;
     } else {
-        // Если ссылки нет -> новый режим (рамка + цвет)
         const bgC = get('bg_c', 'rgba(30,30,30,0.8)');
         const bC = get('b_c', '#ffffff');
         const bW = get('b_w', '2');
@@ -276,10 +294,8 @@
         const el = document.createElement('div');
         el.className = `card ${get('effect','')}`;
         
-        // Применяем стиль
         el.style.cssText = `width:${cSize}px; height:${cSize}px; ${cardStyleBase} font-size:${fSize}; color:${get('fcolor','#fff')}; display: flex; align-items: center; justify-content: center;`;
 
-        // Логика контента (картинка внутри или текст)
         if (String(item.t).startsWith('http')) {
              el.innerHTML = `<img src="${item.t}" style="max-width: 85%; max-height: 85%; object-fit: contain; pointer-events: none; border-radius: 4px;">`;
         } else {
@@ -297,7 +313,9 @@
                     const fb = document.getElementById('fb');
 
                     if(s1.id === s2.id && s1.id >= 0) {
-                        found++; fb.src = get('winimg','');
+                        found++; 
+                        fb.src = get('winimg') || DEFAULTS.winPopup;
+                        
                         playSound('ok.mp3');
 
                         const denom = Math.max(1, activePairs.length);
@@ -313,13 +331,14 @@
                         if(found === activePairs.length) setTimeout(() => {
                             document.getElementById('win-screen').style.display='flex';
                             gameStarted=false;
-                            // Салют
                             try { confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } }); } catch(e){}
                             if (!winPlayed) { winPlayed = true; playSound('win.mp3'); }
                         }, 500);
 
                     } else {
-                        lives--; fb.src = get('loseimg','');
+                        lives--; 
+                        fb.src = get('loseimg') || DEFAULTS.losePopup;
+                        
                         playSound('bad.mp3');
 
                         const icons = document.querySelectorAll('.life');
