@@ -71,14 +71,14 @@
     </div>
 
 <script>
-    // === ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ И НАСТРОЙКИ ===
+    // --- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ---
     const params = new URLSearchParams(window.location.search);
     const get = (n, d) => { let v = params.get(n); return (v===null||v==='null'||v==='') ? d : v; };
-
-    // Ссылка на твою папку (ОБЯЗАТЕЛЬНО проверь файлы там!)
+    
+    // Ссылка на папку звуков
     const SOUND_BASE = "https://natashagodlevskaya16021995-ux.github.io/para.proba4/sounds/";
 
-    // Картинки по умолчанию (гифки)
+    // Дефолтные картинки
     const DEFAULTS = {
         winPopup:  'https://media.tenor.com/423qsjyZqSsAAAAi/yes.gif', 
         losePopup: 'https://media.tenor.com/Va6g-Dh5pSkAAAAi/bunny-nope.gif', 
@@ -87,27 +87,27 @@
         loseScreen:'https://media.tenor.com/I5bwJxpmFAsAAAAi/crying-sad.gif'
     };
 
+    // --- ФУНКЦИЯ ЗВУКА (ИСПРАВЛЕННАЯ) ---
     function playSound(file) {
         try {
-            // file приходит как "win.mp3", "click.mp3" и т.д.
-            // 1. Ищем, не прислал ли редактор свою ссылку (параметр s_win, s_click)
+            // file приходит в формате 'win.mp3'
+            // Пытаемся найти параметр из редактора (s_win)
             let param = 's_' + file.replace('.mp3', '');
             let custom = get(param, '');
 
-            // 2. Если в редакторе мусор (картинка вместо звука) - игнорируем
+            // Если там ссылка на картинку - игнорируем
             if (custom && (custom.includes('.gif') || custom.includes('.png') || custom.includes('.jpg'))) {
                 custom = '';
             }
 
-            // 3. Если есть кастомная ссылка - играем её. Если нет - берем из твоей папки.
+            // Итоговая ссылка: или из редактора, или из папки
             let src = custom ? custom : (SOUND_BASE + file);
 
             const a = new Audio(src);
-            a.volume = 1.0;
-            // Принудительный плей (важно для iOS/Chrome)
+            a.volume = 1.0; 
             const p = a.play();
             if (p !== undefined) {
-                p.catch(e => console.log('Audio error ('+file+'):', e));
+                p.catch(e => { /* Игнорируем ошибки автозапуска */ });
             }
         } catch(e) {}
     }
@@ -120,7 +120,7 @@
         return arr;
     }
 
-    // --- Шрифты ---
+    // --- Инициализация Шрифтов ---
     const font = get('font', 'Arial');
     const effect = get('effect', '');
     if (font !== 'Arial' || effect) {
@@ -134,11 +134,12 @@
     }
     document.body.style.fontFamily = `'${font}', sans-serif`;
 
-    // --- Тексты и UI ---
+    // --- UI Тексты ---
     document.getElementById('st-t').innerText = get('st_t', 'Привет!');
     document.getElementById('st-d').innerText = get('st_d', 'Найди пары');
     document.getElementById('st-b').innerText = get('st_b', 'ИГРАТЬ');
     document.getElementById('st-b').style.background = get('pcolor', '#03dac6');
+    
     document.getElementById('wt').innerText = get('wt', 'Победа!');
     document.getElementById('wd').innerText = get('wd', 'Молодец!');
     document.getElementById('lt').innerText = get('lt', 'Ой!');
@@ -150,7 +151,7 @@
         b.style.background = get('pcolor', '#03dac6');
     });
 
-    // Картинки финалов
+    // --- UI Картинки ---
     const finalWinImg = get('wi') || DEFAULTS.winScreen;
     if(finalWinImg) { 
         const i=document.getElementById('wi-img'); i.src=finalWinImg; i.style.display='block'; 
@@ -161,27 +162,26 @@
         const i=document.getElementById('li-img'); i.src=finalLoseImg; i.style.display='block'; 
     }
 
-    // --- Данные игры ---
+    // --- Обработка данных карт ---
     let allData = [];
     try {
         const rawNew = get('pairs', null);
         const rawOld = get('all_data', '[]');
-        if (rawNew && rawNew !== 'null' && rawNew !== '') {
+        if(rawNew && rawNew !== 'null' && rawNew !== '') {
             allData = JSON.parse(rawNew);
         } else {
             allData = JSON.parse(rawOld);
         }
     } catch(e) {
-        console.log("Error parsing data", e);
         allData = [];
     }
 
     const limit = parseInt(get('limit', 2));
     const extraCount = parseInt(params.has('extraCount') ? get('extraCount', 0) : get('extra_c', 0));
-
+    
     let fSize = get('fsize', '25px');
     if (/^\d+$/.test(fSize)) fSize = fSize + 'px';
-
+    
     const speed = parseFloat(get('speed', 2));
     const cSize = parseInt(get('csize', 140));
 
@@ -195,6 +195,7 @@
         for(let i=0; i<3; i++) lDiv.innerHTML += `<div class="life" style="background-image:url('${lifeUrl}')"></div>`;
     }
 
+    // --- Логика игры ---
     function getBounds() {
         const ui = document.getElementById('ui');
         const r = ui.getBoundingClientRect();
@@ -212,17 +213,19 @@
         shuffle(base);
         const activePairs = base.slice(0, Math.min(limit, base.length));
         const remaining = base.slice(activePairs.length);
-        const activeText = new Set();
-        activePairs.forEach(p => { activeText.add(String(p.a)); activeText.add(String(p.b)); });
-
+        
         let deck = [];
         activePairs.forEach((p, i) => { deck.push({t: p.a, id: i}); deck.push({t: p.b, id: i}); });
 
+        const activeText = new Set();
+        activePairs.forEach(p => { activeText.add(String(p.a)); activeText.add(String(p.b)); });
+        
         let trapPool = [];
         remaining.forEach(p => {
             const pick = Math.random() > 0.5 ? p.a : p.b;
             if (!activeText.has(String(pick))) trapPool.push(pick);
         });
+        
         trapPool = Array.from(new Set(trapPool));
         shuffle(trapPool);
 
@@ -236,23 +239,28 @@
 
     const memoryKey = 'para.proba4.lastSig';
     let built = null;
-    for (let attempt = 0; attempt < 8; attempt++) {
-        const candidate = buildDeckNoRepeat();
-        const lastSig = sessionStorage.getItem(memoryKey);
-        if (!lastSig || candidate.sig !== lastSig || allData.length <= limit + 1) {
-            built = candidate;
-            sessionStorage.setItem(memoryKey, candidate.sig);
-            break;
+    try {
+        for (let attempt = 0; attempt < 8; attempt++) {
+            const candidate = buildDeckNoRepeat();
+            const lastSig = sessionStorage.getItem(memoryKey);
+            if (!lastSig || candidate.sig !== lastSig || allData.length <= limit + 1) {
+                built = candidate;
+                sessionStorage.setItem(memoryKey, candidate.sig);
+                break;
+            }
         }
-    }
+    } catch(e) {} // Защита от ошибок sessionStorage
+    
     if (!built) {
         built = buildDeckNoRepeat();
-        sessionStorage.setItem(memoryKey, built.sig);
+        try { sessionStorage.setItem(memoryKey, built.sig); } catch(e){}
     }
 
     const deck = built.deck;
     const activePairs = built.activePairs;
     let lives = 3, found = 0, selected = [], cards = [], gameStarted = false;
+    let winPlayed = false;
+    let losePlayed = false;
 
     function placeNonOverlapping(existing, bounds) {
         const minDist = Math.max(30, Math.floor(cSize * 0.85));
@@ -274,11 +282,141 @@
     const bounds0 = getBounds();
     const placed = [];
 
-    // Стиль карточек (фон или рамка)
+    // --- Стили Карточек (Рамка или Картинка) ---
     const bgImgUrl = get('cimg','');
     let cardStyleBase = '';
     if (bgImgUrl) {
         cardStyleBase = `background-image:url('${bgImgUrl}'); border:none;`;
     } else {
         const bgC = get('bg_c', 'rgba(30,30,30,0.8)');
-        const b
+        const bC = get('b_c', '#ffffff');
+        const bW = get('b_w', '2');
+        const bR = get('b_r', '15');
+        cardStyleBase = `background: ${bgC}; border: ${bW}px solid ${bC}; border-radius: ${bR}px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);`;
+    }
+
+    deck.forEach(item => {
+        const el = document.createElement('div');
+        el.className = `card ${get('effect','')}`;
+        el.style.cssText = `width:${cSize}px; height:${cSize}px; ${cardStyleBase} font-size:${fSize}; color:${get('fcolor','#fff')}; display: flex; align-items: center; justify-content: center;`;
+
+        // Контент карточки (текст или картинка внутри)
+        if (String(item.t).startsWith('http')) {
+             el.innerHTML = `<img src="${item.t}" style="max-width: 85%; max-height: 85%; object-fit: contain; pointer-events: none; border-radius: 4px;">`;
+        } else {
+             el.innerText = item.t;
+        }
+
+        el.onclick = () => {
+            if(selected.length < 2 && !el.dataset.done) {
+                
+                playSound('click.mp3');
+                el.classList.add('sel');
+                selected.push({el, id: item.id});
+
+                if(selected.length === 2) {
+                    const [s1, s2] = selected;
+                    const fb = document.getElementById('fb');
+
+                    if(s1.id === s2.id && s1.id >= 0) {
+                        // === ВЕРНО ===
+                        found++;
+                        fb.src = get('winimg') || DEFAULTS.winPopup;
+                        
+                        // Прогресс
+                        const denom = Math.max(1, activePairs.length);
+                        document.getElementById('p-bar').style.width = (found/denom)*100 + '%';
+
+                        selected.forEach(s => {
+                            s.el.classList.remove('sel');
+                            s.el.classList.add('good');
+                            s.el.style.display = 'none';
+                            s.el.dataset.done = '1';
+                        });
+
+                        if(found === activePairs.length) {
+                            // !!! ГЛАВНОЕ: ИГРАЕМ ЗВУК ПОБЕДЫ СРАЗУ В МОМЕНТ КЛИКА !!!
+                            if (!winPlayed) {
+                                winPlayed = true;
+                                playSound('win.mp3');
+                            }
+                            
+                            setTimeout(() => {
+                                document.getElementById('win-screen').style.display='flex';
+                                gameStarted=false;
+                                try { confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } }); } catch(e){}
+                            }, 1000);
+                        } else {
+                            playSound('ok.mp3');
+                        }
+
+                    } else {
+                        // === ОШИБКА ===
+                        lives--; 
+                        fb.src = get('loseimg') || DEFAULTS.losePopup;
+                        
+                        const icons = document.querySelectorAll('.life');
+                        if(icons[lives]) icons[lives].style.opacity = '0.1';
+
+                        const badEls = selected.map(s => s.el);
+                        badEls.forEach(elx => {
+                            elx.classList.add('bad');
+                            elx.classList.remove('sel');
+                        });
+                        setTimeout(() => {
+                            badEls.forEach(elx => elx.classList.remove('bad'));
+                        }, 2000);
+
+                        if(lives <= 0) {
+                            // !!! ГЛАВНОЕ: ИГРАЕМ ЗВУК ПРОИГРЫША СРАЗУ В МОМЕНТ КЛИКА !!!
+                            if (!losePlayed) {
+                                losePlayed = true;
+                                playSound('lose.mp3');
+                            }
+
+                            setTimeout(() => {
+                                document.getElementById('lose-screen').style.display='flex';
+                                gameStarted=false;
+                            }, 1000);
+                        } else {
+                            playSound('bad.mp3');
+                        }
+                    }
+
+                    fb.style.transform = 'translate(-50%, -50%) scale(1)';
+                    setTimeout(() => fb.style.transform = 'translate(-50%, -50%) scale(0)', 600);
+                    selected = [];
+                }
+            }
+        };
+
+        const pos = placeNonOverlapping(placed, bounds0);
+        placed.push(pos);
+        const cObj = { el, x: pos.x, y: pos.y, vx: (Math.random()-0.5)*speed, vy: (Math.random()-0.5)*speed };
+        document.getElementById('game').appendChild(el);
+        cards.push(cObj);
+    });
+
+    function startGame() {
+        document.getElementById('start-screen').style.display='none';
+        gameStarted=true;
+        loop();
+    }
+
+    function loop() {
+        if(!gameStarted) return;
+        const b = getBounds();
+        cards.forEach(c => {
+            if(c.el.dataset.done) return;
+            c.x += c.vx; c.y += c.vy;
+            if(c.x < b.minX) { c.x = b.minX; c.vx *= -1; }
+            if(c.x > b.maxX) { c.x = b.maxX; c.vx *= -1; }
+            if(c.y < b.minY) { c.y = b.minY; c.vy *= -1; }
+            if(c.y > b.maxY) { c.y = b.maxY; c.vy *= -1; }
+            c.el.style.transform = `translate(${c.x}px, ${c.y}px)`;
+        });
+        requestAnimationFrame(loop);
+    }
+</script>
+</body>
+</html>
