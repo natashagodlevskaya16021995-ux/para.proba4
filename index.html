@@ -159,31 +159,31 @@
         for(let i=0; i<3; i++) lDiv.innerHTML += `<div class="life" style="background-image:url('${lifeUrl}')"></div>`;
     }
 
-    // ✅ ИСПРАВЛЕННАЯ СИСТЕМА ЗВУКОВ
-    // Теперь она слушает Редактор (custom) ИЛИ берет из папки (SOUND_BASE)
+    // ✅ ИСПРАВЛЕННАЯ ФУНКЦИЯ ЗВУКА
     function playSound(name) {
         try {
-            // 1. Ищем параметр из редактора (s_click, s_win и т.д.)
-            // Преобразуем имя файла (win.mp3 -> s_win)
-            let paramName = 's_' + name.replace('.mp3', ''); 
-            let customUrl = get(paramName, '');
-
-            // Если в редакторе пусто или там картинка (ошибка), сбрасываем
+            // Если имя пришло с .mp3 (например win.mp3), убираем расширение для поиска параметра
+            let paramKey = 's_' + name.replace('.mp3', ''); 
+            
+            // 1. Пробуем взять ссылку из Редактора
+            let customUrl = get(paramKey, '');
+            
+            // Защита: если там картинка, сбрасываем
             if (customUrl && (customUrl.includes('.gif') || customUrl.includes('.png') || customUrl.includes('.jpg'))) {
                 customUrl = '';
             }
 
-            // 2. Если есть ссылка из редактора - берем её. Иначе - из папки.
-            let src = customUrl ? customUrl : (SOUND_BASE + name);
+            // 2. Если ссылки нет, берем файл из твоей папки (если имя пришло без .mp3, добавляем)
+            let fileName = name.includes('.mp3') ? name : (name + '.mp3');
+            let src = customUrl ? customUrl : (SOUND_BASE + fileName);
 
             const a = new Audio(src);
             a.volume = 1.0; 
             
-            // Принудительный запуск
             const playPromise = a.play();
             if (playPromise !== undefined) {
                 playPromise.catch(error => {
-                    console.log('Playback failed for ' + src);
+                    console.log('Audio error for: ' + src);
                 });
             }
         } catch(e) {}
@@ -303,127 +303,4 @@
         const el = document.createElement('div');
         el.className = `card ${get('effect','')}`;
         
-        el.style.cssText = `width:${cSize}px; height:${cSize}px; ${cardStyleBase} font-size:${fSize}; color:${get('fcolor','#fff')}; display: flex; align-items: center; justify-content: center;`;
-
-        if (String(item.t).startsWith('http')) {
-             el.innerHTML = `<img src="${item.t}" style="max-width: 85%; max-height: 85%; object-fit: contain; pointer-events: none; border-radius: 4px;">`;
-        } else {
-             el.innerText = item.t;
-        }
-
-        el.onclick = () => {
-            if(selected.length < 2 && !el.dataset.done) {
-                playSound('click.mp3');
-                el.classList.add('sel');
-                selected.push({el, id: item.id});
-
-                if(selected.length === 2) {
-                    const [s1, s2] = selected;
-                    const fb = document.getElementById('fb');
-
-                    if(s1.id === s2.id && s1.id >= 0) {
-                        found++; 
-                        fb.src = get('winimg') || DEFAULTS.winPopup;
-                        
-                        playSound('ok.mp3');
-
-                        const denom = Math.max(1, activePairs.length);
-                        document.getElementById('p-bar').style.width = (found/denom)*100 + '%';
-
-                        selected.forEach(s => {
-                            s.el.classList.remove('sel');
-                            s.el.classList.add('good');
-                            s.el.style.display = 'none';
-                            s.el.dataset.done = '1';
-                        });
-
-                        // ✅ ЗАДЕРЖКА 1 СЕКУНДА (чтобы Ок доиграл и начался Win)
-                        if(found === activePairs.length) setTimeout(() => {
-                            document.getElementById('win-screen').style.display='flex';
-                            gameStarted=false;
-                            try { confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } }); } catch(e){}
-                            
-                            // ЗВУК ПОБЕДЫ
-                            if (!winPlayed) { 
-                                winPlayed = true; 
-                                playSound('win.mp3'); 
-                            }
-                        }, 1000); 
-
-                    } else {
-                        lives--; 
-                        fb.src = get('loseimg') || DEFAULTS.losePopup;
-                        
-                        playSound('bad.mp3');
-
-                        const icons = document.querySelectorAll('.life');
-                        if(icons[lives]) icons[lives].style.opacity = '0.1';
-
-                        const badEls = selected.map(s => s.el);
-                        badEls.forEach(elx => {
-                            elx.classList.add('bad');
-                            elx.classList.remove('sel');
-                        });
-                        setTimeout(() => {
-                            badEls.forEach(elx => elx.classList.remove('bad'));
-                        }, 2000);
-
-                        // ЗАДЕРЖКА ПРОИГРЫША ТОЖЕ 1 СЕКУНДА
-                        if(lives <= 0) setTimeout(() => {
-                            document.getElementById('lose-screen').style.display='flex';
-                            gameStarted=false;
-                            if (!losePlayed) { losePlayed = true; playSound('lose.mp3'); }
-                        }, 1000);
-                    }
-
-                    fb.style.transform = 'translate(-50%, -50%) scale(1)';
-                    setTimeout(() => fb.style.transform = 'translate(-50%, -50%) scale(0)', 600);
-                    selected = [];
-                }
-            }
-        };
-
-        const pos = placeNonOverlapping(placed, bounds0);
-        placed.push(pos);
-
-        const cObj = {
-            el,
-            x: pos.x,
-            y: pos.y,
-            vx: (Math.random()-0.5)*speed,
-            vy: (Math.random()-0.5)*speed
-        };
-
-        document.getElementById('game').appendChild(el);
-        cards.push(cObj);
-    });
-
-    function startGame() {
-        document.getElementById('start-screen').style.display='none';
-        gameStarted=true;
-        loop();
-    }
-
-    function loop() {
-        if(!gameStarted) return;
-
-        const b = getBounds();
-
-        cards.forEach(c => {
-            if(c.el.dataset.done) return;
-
-            c.x += c.vx; c.y += c.vy;
-
-            if(c.x < b.minX) { c.x = b.minX; c.vx *= -1; }
-            if(c.x > b.maxX) { c.x = b.maxX; c.vx *= -1; }
-            if(c.y < b.minY) { c.y = b.minY; c.vy *= -1; }
-            if(c.y > b.maxY) { c.y = b.maxY; c.vy *= -1; }
-
-            c.el.style.transform = `translate(${c.x}px, ${c.y}px)`;
-        });
-
-        requestAnimationFrame(loop);
-    }
-</script>
-</body>
-</html>
+        el.style.cssText = `width:${cSize}px; height:${cSize}px; ${cardStyleBase} font-size:${
