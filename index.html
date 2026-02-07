@@ -75,7 +75,7 @@
     const get = (n, d) => { let v = params.get(n); return (v===null||v==='null'||v==='') ? d : v; };
 
     // =========================================================
-    // 👇 ТВОИ ССЫЛКИ УЖЕ ВСТАВЛЕНЫ СЮДА 👇
+    // 👇 ТВОИ СТАНДАРТНЫЕ КАРТИНКИ
     // =========================================================
     const DEFAULTS = {
         winPopup:  'https://media.tenor.com/423qsjyZqSsAAAAi/yes.gif', 
@@ -160,6 +160,7 @@
         for(let i=0; i<3; i++) lDiv.innerHTML += `<div class="life" style="background-image:url('${lifeUrl}')"></div>`;
     }
 
+    // ✅ УМНАЯ СИСТЕМА ЗВУКОВ (С ЗАЩИТОЙ ОТ ОШИБОК)
     const SOUND_BASE = "https://natashagodlevskaya16021995-ux.github.io/para.proba4/sounds/";
     function playSound(file) {
         try {
@@ -171,12 +172,26 @@
             else if(file.includes('lose')) type = 's_lose';
 
             let custom = get(type, '');
+            
+            // ЗАЩИТА: Если пользователь случайно сунул картинку (gif/png/jpg) в поле звука — игнорируем её
+            if (custom && (custom.includes('.gif') || custom.includes('.png') || custom.includes('.jpg') || custom.includes('tenor.com'))) {
+                custom = ''; 
+            }
+
             let src = custom ? custom : (SOUND_BASE + file);
 
             const a = new Audio(src);
+            a.volume = 1.0; // Максимальная громкость
             a.preload = 'auto';
-            a.currentTime = 0;
-            a.play().catch(() => {});
+            
+            // Принудительный запуск с обработкой ошибок
+            const promise = a.play();
+            if (promise !== undefined) {
+                promise.catch(error => {
+                    // Ошибки подавляем, чтобы не мешать игре, но в консоль пишем
+                    console.log("Audio play prevented or file missing: " + src);
+                });
+            }
         } catch(e) {}
     }
 
@@ -332,7 +347,12 @@
                             document.getElementById('win-screen').style.display='flex';
                             gameStarted=false;
                             try { confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } }); } catch(e){}
-                            if (!winPlayed) { winPlayed = true; playSound('win.mp3'); }
+                            
+                            // ЗВУК ПОБЕДЫ: играем, если ещё не играл
+                            if (!winPlayed) { 
+                                winPlayed = true; 
+                                playSound('win.mp3'); 
+                            }
                         }, 500);
 
                     } else {
