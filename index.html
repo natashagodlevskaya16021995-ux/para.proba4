@@ -14,7 +14,7 @@
 
         .card {
             position: absolute;
-            background-size: contain;
+            background-size: cover;
             background-repeat: no-repeat;
             background-position: center;
             display: flex;
@@ -26,12 +26,15 @@
             box-sizing: border-box;
             user-select: none;
             transition: filter .4s ease, transform .18s ease;
+            /* Базовый стиль границы */
+            border-style: solid;
         }
 
         .card.sel {
             filter: drop-shadow(0 0 10px rgba(255,255,255,.85)) drop-shadow(0 0 22px rgba(3,218,198,.65));
             transform: scale(1.03);
             animation: pulseGlow .6s ease-in-out infinite alternate;
+            z-index: 50;
         }
         @keyframes pulseGlow {
             from { filter: drop-shadow(0 0 8px rgba(255,255,255,.7)) drop-shadow(0 0 18px rgba(3,218,198,.45)); }
@@ -87,21 +90,13 @@
     if (font !== 'Arial' || effect) {
         const link = document.createElement('link');
         link.rel = 'stylesheet';
-        
-        // Google Fonts API требует название эффекта без префикса "font-effect-"
-        // Например: мы просим "&effect=neon", а в CSS классе пишем "font-effect-neon"
         const cleanEffect = effect.replace('font-effect-', '');
-        
-        // Используем старый надежный API (css вместо css2), он лучше работает с эффектами
         let url = `https://fonts.googleapis.com/css?family=${font.replace(/ /g, '+')}`;
         if (cleanEffect) url += `&effect=${cleanEffect}`;
-        
         link.href = url;
         document.head.appendChild(link);
     }
-    // Применяем шрифт к телу документа
     document.body.style.fontFamily = `'${font}', sans-serif`;
-    // ---------------------------------
 
     document.getElementById('st-t').innerText = get('st_t', 'Привет!');
     document.getElementById('st-d').innerText = get('st_d', 'Найди пары');
@@ -143,11 +138,10 @@
     const lDiv = document.getElementById('lives');
     for(let i=0; i<3; i++) lDiv.innerHTML += `<div class="life" style="background-image:url('${get('lifeimg','')}')"></div>`;
 
-    // ✅ ЛОГИКА ЗВУКОВ (СОХРАНЕНА)
+    // ✅ ЗВУКИ (КАСТОМНЫЕ + СТАНДАРТНЫЕ)
     const SOUND_BASE = "https://natashagodlevskaya16021995-ux.github.io/para.proba4/sounds/";
     function playSound(file) {
         try {
-            // Определяем тип звука по имени файла
             let type = '';
             if(file.includes('click')) type = 's_click';
             else if(file.includes('ok')) type = 's_ok';
@@ -155,7 +149,6 @@
             else if(file.includes('win')) type = 's_win';
             else if(file.includes('lose')) type = 's_lose';
 
-            // Проверяем, задан ли кастомный URL в параметрах
             let custom = get(type, '');
             let src = custom ? custom : (SOUND_BASE + file);
 
@@ -166,7 +159,6 @@
         } catch(e) {}
     }
 
-    // границы движения
     function getBounds() {
         const ui = document.getElementById('ui');
         const r = ui.getBoundingClientRect();
@@ -179,7 +171,6 @@
         };
     }
 
-    // сборка deck
     function buildDeckNoRepeat() {
         const base = allData.slice();
         shuffle(base);
@@ -239,7 +230,6 @@
 
     let lives = 3, found = 0, selected = [], cards = [], gameStarted = false;
 
-    // умная раскладка
     function placeNonOverlapping(existing, bounds) {
         const minDist = Math.max(30, Math.floor(cSize * 0.85));
         const tries = 220;
@@ -266,31 +256,39 @@
     const bounds0 = getBounds();
     const placed = [];
 
-    let winPlayed = false;
-    let losePlayed = false;
+    // --- НОВАЯ ЛОГИКА: КАРТИНКА ИЛИ РАМКА ---
+    const bgImgUrl = get('cimg','');
+    let cardStyleBase = '';
+
+    if (bgImgUrl) {
+        // Если ссылка на фон есть -> старый режим (картинка)
+        cardStyleBase = `background-image:url('${bgImgUrl}'); border:none;`;
+    } else {
+        // Если ссылки нет -> новый режим (рамка + цвет)
+        const bgC = get('bg_c', 'rgba(30,30,30,0.8)');
+        const bC = get('b_c', '#ffffff');
+        const bW = get('b_w', '2');
+        const bR = get('b_r', '15');
+        cardStyleBase = `background: ${bgC}; border: ${bW}px solid ${bC}; border-radius: ${bR}px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);`;
+    }
 
     deck.forEach(item => {
         const el = document.createElement('div');
-        // Здесь добавляем класс эффекта (например font-effect-neon)
         el.className = `card ${get('effect','')}`;
         
-        // ✅ ПОДДЕРЖКА КАРТИНОК И ТЕКСТА (СОХРАНЕНА)
-        el.style.cssText = `width:${cSize}px; height:${cSize}px; background-image:url('${get('cimg','')}'); font-size:${fSize}; color:${get('fcolor','#fff')}; display: flex; align-items: center; justify-content: center;`;
+        // Применяем стиль
+        el.style.cssText = `width:${cSize}px; height:${cSize}px; ${cardStyleBase} font-size:${fSize}; color:${get('fcolor','#fff')}; display: flex; align-items: center; justify-content: center;`;
 
+        // Логика контента (картинка внутри или текст)
         if (String(item.t).startsWith('http')) {
-             // Если ссылка — вставляем картинку
              el.innerHTML = `<img src="${item.t}" style="max-width: 85%; max-height: 85%; object-fit: contain; pointer-events: none; border-radius: 4px;">`;
         } else {
-             // Если нет — текст
              el.innerText = item.t;
         }
 
         el.onclick = () => {
             if(selected.length < 2 && !el.dataset.done) {
-
-                // ✅ звук выбора
                 playSound('click.mp3');
-
                 el.classList.add('sel');
                 selected.push({el, id: item.id});
 
@@ -300,8 +298,6 @@
 
                     if(s1.id === s2.id && s1.id >= 0) {
                         found++; fb.src = get('winimg','');
-
-                        // ✅ звук верно
                         playSound('ok.mp3');
 
                         const denom = Math.max(1, activePairs.length);
@@ -317,30 +313,18 @@
                         if(found === activePairs.length) setTimeout(() => {
                             document.getElementById('win-screen').style.display='flex';
                             gameStarted=false;
-
-                            // ✅ КОНФЕТТИ ПРИ ПОБЕДЕ (СОХРАНЕНО)
-                            try {
-                                confetti({
-                                    particleCount: 150,
-                                    spread: 70,
-                                    origin: { y: 0.6 }
-                                });
-                            } catch(e){}
-
-                            // ✅ звук победы (1 раз)
+                            // Салют
+                            try { confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } }); } catch(e){}
                             if (!winPlayed) { winPlayed = true; playSound('win.mp3'); }
                         }, 500);
 
                     } else {
                         lives--; fb.src = get('loseimg','');
-
-                        // ✅ звук неверно
                         playSound('bad.mp3');
 
                         const icons = document.querySelectorAll('.life');
                         if(icons[lives]) icons[lives].style.opacity = '0.1';
 
-                        // красное горит 2 секунды и исчезает
                         const badEls = selected.map(s => s.el);
                         badEls.forEach(elx => {
                             elx.classList.add('bad');
@@ -353,8 +337,6 @@
                         if(lives <= 0) setTimeout(() => {
                             document.getElementById('lose-screen').style.display='flex';
                             gameStarted=false;
-
-                            // ✅ звук проигрыша (1 раз)
                             if (!losePlayed) { losePlayed = true; playSound('lose.mp3'); }
                         }, 500);
                     }
