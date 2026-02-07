@@ -80,14 +80,28 @@
         return arr;
     }
 
+    // --- ИСПРАВЛЕННЫЙ БЛОК ШРИФТОВ ---
     const font = get('font', 'Arial');
-    if (font !== 'Arial') {
+    const effect = get('effect', '');
+
+    if (font !== 'Arial' || effect) {
         const link = document.createElement('link');
         link.rel = 'stylesheet';
-        link.href = `https://fonts.googleapis.com/css2?family=${font.replace(/ /g, '+')}${get('effect','') ? '&effect='+get('effect','') : ''}`;
+        
+        // Google Fonts API требует название эффекта без префикса "font-effect-"
+        // Например: мы просим "&effect=neon", а в CSS классе пишем "font-effect-neon"
+        const cleanEffect = effect.replace('font-effect-', '');
+        
+        // Используем старый надежный API (css вместо css2), он лучше работает с эффектами
+        let url = `https://fonts.googleapis.com/css?family=${font.replace(/ /g, '+')}`;
+        if (cleanEffect) url += `&effect=${cleanEffect}`;
+        
+        link.href = url;
         document.head.appendChild(link);
-        document.body.style.fontFamily = `'${font}', sans-serif`;
     }
+    // Применяем шрифт к телу документа
+    document.body.style.fontFamily = `'${font}', sans-serif`;
+    // ---------------------------------
 
     document.getElementById('st-t').innerText = get('st_t', 'Привет!');
     document.getElementById('st-d').innerText = get('st_d', 'Найди пары');
@@ -129,7 +143,7 @@
     const lDiv = document.getElementById('lives');
     for(let i=0; i<3; i++) lDiv.innerHTML += `<div class="life" style="background-image:url('${get('lifeimg','')}')"></div>`;
 
-    // ✅ ОБНОВЛЕННАЯ ЛОГИКА ЗВУКОВ
+    // ✅ ЛОГИКА ЗВУКОВ (СОХРАНЕНА)
     const SOUND_BASE = "https://natashagodlevskaya16021995-ux.github.io/para.proba4/sounds/";
     function playSound(file) {
         try {
@@ -152,7 +166,7 @@
         } catch(e) {}
     }
 
-    // 4) границы движения (не под UI)
+    // границы движения
     function getBounds() {
         const ui = document.getElementById('ui');
         const r = ui.getBoundingClientRect();
@@ -165,7 +179,7 @@
         };
     }
 
-    // сборка deck с 1) и 3)
+    // сборка deck
     function buildDeckNoRepeat() {
         const base = allData.slice();
         shuffle(base);
@@ -225,7 +239,7 @@
 
     let lives = 3, found = 0, selected = [], cards = [], gameStarted = false;
 
-    // 6) умная раскладка (без наложений)
+    // умная раскладка
     function placeNonOverlapping(existing, bounds) {
         const minDist = Math.max(30, Math.floor(cSize * 0.85));
         const tries = 220;
@@ -257,9 +271,10 @@
 
     deck.forEach(item => {
         const el = document.createElement('div');
+        // Здесь добавляем класс эффекта (например font-effect-neon)
         el.className = `card ${get('effect','')}`;
         
-        // ✅ ПОДДЕРЖКА КАРТИНОК И ТЕКСТА
+        // ✅ ПОДДЕРЖКА КАРТИНОК И ТЕКСТА (СОХРАНЕНА)
         el.style.cssText = `width:${cSize}px; height:${cSize}px; background-image:url('${get('cimg','')}'); font-size:${fSize}; color:${get('fcolor','#fff')}; display: flex; align-items: center; justify-content: center;`;
 
         if (String(item.t).startsWith('http')) {
@@ -303,7 +318,7 @@
                             document.getElementById('win-screen').style.display='flex';
                             gameStarted=false;
 
-                            // ✅ КОНФЕТТИ ПРИ ПОБЕДЕ
+                            // ✅ КОНФЕТТИ ПРИ ПОБЕДЕ (СОХРАНЕНО)
                             try {
                                 confetti({
                                     particleCount: 150,
