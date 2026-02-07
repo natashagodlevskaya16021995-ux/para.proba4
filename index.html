@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<style>
+
+body{margin:0;overflow:hidden}
+
+.card{
+position:absolute;
+display:flex;
+align-items:center;
+justify-content:center;
+cursor:pointer;
+transition:filter .4s,transform .18s;
+}
+
+.card.sel{
+filter:drop-shadow(0 0 15px cyan);
+}
+
+.card.bad{
+filter:drop-shadow(0 0 20px red);
+}
+
+.card.good{
+filter:drop-shadow(0 0 20px lime);
+}
+
+</style>
+</head>
+<body>
+
+<div id="game"></div>
+
+<script>
+
+const params=new URLSearchParams(location.search)
+
+function shuffle(a){
+for(let i=a.length-1;i>0;i--){
+let j=Math.floor(Math.random()*(i+1))
+;[a[i],a[j]]=[a[j],a[i]]
+}
+return a
+}
+
+let allData=JSON.parse(params.get("pairs")||"[]")
+
+const limit=parseInt(params.get("limit")||2)
+
+
+// ---------- ЗВУКИ (авто из repo sounds/) ----------
+
+const SOUND_BASE="https://natashagodlevskaya16021995-ux.github.io/para.proba4/sounds/"
+
+const S_CLICK=new Audio(SOUND_BASE+"click.mp3")
+const S_OK=new Audio(SOUND_BASE+"ok.mp3")
+const S_BAD=new Audio(SOUND_BASE+"bad.mp3")
+const S_WIN=new Audio(SOUND_BASE+"win.mp3")
+const S_LOSE=new Audio(SOUND_BASE+"lose.mp3")
+
+function play(s){
+try{
+s.currentTime=0
+s.play()
+}catch(e){}
+}
+
+
+// ---------- сборка deck ----------
+
+shuffle(allData)
+
+const active=allData.slice(0,limit)
+const remaining=allData.slice(limit)
+
+let activeText=new Set()
+active.forEach(p=>{activeText.add(p.a);activeText.add(p.b)})
+
+let deck=[]
+
+active.forEach((p,i)=>{
+deck.push({t:p.a,id:i})
+deck.push({t:p.b,id:i})
+})
+
+remaining.forEach(p=>{
+let pick=Math.random()>0.5?p.a:p.b
+if(!activeText.has(pick)){
+deck.push({t:pick,id:-1})
+}
+})
+
+shuffle(deck)
+
+
+// ---------- создание карточек ----------
+
+let selected=[]
+let found=0
+
+deck.forEach(item=>{
+
+let el=document.createElement("div")
+el.className="card"
+el.innerText=item.t
+
+el.style.width="140px"
+el.style.height="140px"
+el.style.left=Math.random()*80+"vw"
+el.style.top=Math.random()*80+"vh"
+
+el.onclick=()=>{
+
+play(S_CLICK)
+
+if(selected.length<2){
+
+el.classList.add("sel")
+
+selected.push({el,id:item.id})
+
+if(selected.length===2){
+
+let [a,b]=selected
+
+if(a.id===b.id && a.id>=0){
+
+play(S_OK)
+
+a.el.classList.remove("sel")
+b.el.classList.remove("sel")
+
+a.el.classList.add("good")
+b.el.classList.add("good")
+
+found++
+
+if(found===active.length){
+
+setTimeout(()=>{
+play(S_WIN)
+},500)
+
+}
+
+}else{
+
+play(S_BAD)
+
+const badEls=selected.map(s=>s.el)
+
+badEls.forEach(e=>{
+e.classList.add("bad")
+e.classList.remove("sel")
+})
+
+setTimeout(()=>{
+badEls.forEach(e=>e.classList.remove("bad"))
+},2000)
+
+}
+
+selected=[]
+
+}
+
+}
+
+}
+
+game.appendChild(el)
+
+})
+
+</script>
+</body>
+</html>
