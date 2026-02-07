@@ -74,29 +74,17 @@
     const params = new URLSearchParams(window.location.search);
     const get = (n, d) => { let v = params.get(n); return (v===null||v==='null'||v==='') ? d : v; };
 
-    // =========================================================
-    // 👇 НАСТРОЙКИ (ТВОИ ЛИЧНЫЕ ФАЙЛЫ)
-    // =========================================================
-    
     // Ссылка на твою папку звуков
     const SOUND_BASE = "https://natashagodlevskaya16021995-ux.github.io/para.proba4/sounds/";
 
+    // Дефолтные картинки (на всякий случай)
     const DEFAULTS = {
-        // Картинки (Твои GIF)
         winPopup:  'https://media.tenor.com/423qsjyZqSsAAAAi/yes.gif', 
         losePopup: 'https://media.tenor.com/Va6g-Dh5pSkAAAAi/bunny-nope.gif', 
         life:      'https://media.tenor.com/iNdYjrgY90MAAAAi/red-heart-bumping.gif', 
         winScreen: 'https://media.tenor.com/CuKhzQTvzV0AAAAi/%D0%BA%D0%BE%D1%82%D1%91%D0%BD%D0%BE%D0%BA-%D0%B3%D0%B0%D0%B2-kitten-named-woof.gif', 
-        loseScreen:'https://media.tenor.com/I5bwJxpmFAsAAAAi/crying-sad.gif',
-
-        // Звуки (Берутся из твоей папки на GitHub)
-        snd_click: SOUND_BASE + 'click.mp3',
-        snd_ok:    SOUND_BASE + 'ok.mp3', 
-        snd_bad:   SOUND_BASE + 'bad.mp3',
-        snd_win:   SOUND_BASE + 'win.mp3',
-        snd_lose:  SOUND_BASE + 'lose.mp3'
+        loseScreen:'https://media.tenor.com/I5bwJxpmFAsAAAAi/crying-sad.gif'
     };
-    // =========================================================
 
     function shuffle(arr) {
         for (let i = arr.length - 1; i > 0; i--) {
@@ -171,33 +159,33 @@
         for(let i=0; i<3; i++) lDiv.innerHTML += `<div class="life" style="background-image:url('${lifeUrl}')"></div>`;
     }
 
-    // ✅ УМНАЯ СИСТЕМА ЗВУКОВ
-    function playSound(file) {
+    // ✅ ИСПРАВЛЕННАЯ СИСТЕМА ЗВУКОВ
+    // Теперь она слушает Редактор (custom) ИЛИ берет из папки (SOUND_BASE)
+    function playSound(name) {
         try {
-            let type = '';
-            let defaultUrl = '';
-            
-            // Определяем, какой стандартный файл брать
-            if(file.includes('click')) { type = 's_click'; defaultUrl = DEFAULTS.snd_click; }
-            else if(file.includes('ok')) { type = 's_ok'; defaultUrl = DEFAULTS.snd_ok; }
-            else if(file.includes('bad')) { type = 's_bad'; defaultUrl = DEFAULTS.snd_bad; }
-            else if(file.includes('win')) { type = 's_win'; defaultUrl = DEFAULTS.snd_win; }
-            else if(file.includes('lose')) { type = 's_lose'; defaultUrl = DEFAULTS.snd_lose; }
+            // 1. Ищем параметр из редактора (s_click, s_win и т.д.)
+            // Преобразуем имя файла (win.mp3 -> s_win)
+            let paramName = 's_' + name.replace('.mp3', ''); 
+            let customUrl = get(paramName, '');
 
-            let custom = get(type, '');
-            
-            // Если в редакторе мусор вместо ссылки на mp3 - игнорируем
-            if (custom && (custom.includes('.gif') || custom.includes('.png') || custom.includes('.jpg'))) {
-                custom = ''; 
+            // Если в редакторе пусто или там картинка (ошибка), сбрасываем
+            if (customUrl && (customUrl.includes('.gif') || customUrl.includes('.png') || customUrl.includes('.jpg'))) {
+                customUrl = '';
             }
 
-            // Если есть кастомная ссылка - берем её, если нет - берем ТВОЙ файл с Гитхаба
-            let src = custom ? custom : defaultUrl;
+            // 2. Если есть ссылка из редактора - берем её. Иначе - из папки.
+            let src = customUrl ? customUrl : (SOUND_BASE + name);
 
             const a = new Audio(src);
             a.volume = 1.0; 
-            a.play().catch(e => console.log('Sound error: ' + src, e));
             
+            // Принудительный запуск
+            const playPromise = a.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.log('Playback failed for ' + src);
+                });
+            }
         } catch(e) {}
     }
 
@@ -325,7 +313,7 @@
 
         el.onclick = () => {
             if(selected.length < 2 && !el.dataset.done) {
-                playSound('click');
+                playSound('click.mp3');
                 el.classList.add('sel');
                 selected.push({el, id: item.id});
 
@@ -337,7 +325,7 @@
                         found++; 
                         fb.src = get('winimg') || DEFAULTS.winPopup;
                         
-                        playSound('ok');
+                        playSound('ok.mp3');
 
                         const denom = Math.max(1, activePairs.length);
                         document.getElementById('p-bar').style.width = (found/denom)*100 + '%';
@@ -349,7 +337,7 @@
                             s.el.dataset.done = '1';
                         });
 
-                        // ✅ ЗАДЕРЖКА 1000мс (1 секунда) ПЕРЕД ПОБЕДОЙ
+                        // ✅ ЗАДЕРЖКА 1 СЕКУНДА (чтобы Ок доиграл и начался Win)
                         if(found === activePairs.length) setTimeout(() => {
                             document.getElementById('win-screen').style.display='flex';
                             gameStarted=false;
@@ -358,7 +346,7 @@
                             // ЗВУК ПОБЕДЫ
                             if (!winPlayed) { 
                                 winPlayed = true; 
-                                playSound('win'); 
+                                playSound('win.mp3'); 
                             }
                         }, 1000); 
 
@@ -366,7 +354,7 @@
                         lives--; 
                         fb.src = get('loseimg') || DEFAULTS.losePopup;
                         
-                        playSound('bad');
+                        playSound('bad.mp3');
 
                         const icons = document.querySelectorAll('.life');
                         if(icons[lives]) icons[lives].style.opacity = '0.1';
@@ -380,10 +368,11 @@
                             badEls.forEach(elx => elx.classList.remove('bad'));
                         }, 2000);
 
+                        // ЗАДЕРЖКА ПРОИГРЫША ТОЖЕ 1 СЕКУНДА
                         if(lives <= 0) setTimeout(() => {
                             document.getElementById('lose-screen').style.display='flex';
                             gameStarted=false;
-                            if (!losePlayed) { losePlayed = true; playSound('lose'); }
+                            if (!losePlayed) { losePlayed = true; playSound('lose.mp3'); }
                         }, 1000);
                     }
 
