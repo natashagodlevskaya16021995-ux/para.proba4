@@ -14,7 +14,7 @@
 
         .card {
             position: absolute;
-            background-size: cover;
+            background-size: contain; 
             background-repeat: no-repeat;
             background-position: center;
             display: flex;
@@ -87,27 +87,23 @@
         loseScreen:'https://media.tenor.com/I5bwJxpmFAsAAAAi/crying-sad.gif'
     };
 
-    // --- ФУНКЦИЯ ЗВУКА (ИСПРАВЛЕННАЯ) ---
+    // --- ФУНКЦИЯ ЗВУКА ---
     function playSound(file) {
         try {
-            // file приходит в формате 'win.mp3'
-            // Пытаемся найти параметр из редактора (s_win)
             let param = 's_' + file.replace('.mp3', '');
             let custom = get(param, '');
 
-            // Если там ссылка на картинку - игнорируем
             if (custom && (custom.includes('.gif') || custom.includes('.png') || custom.includes('.jpg'))) {
                 custom = '';
             }
 
-            // Итоговая ссылка: или из редактора, или из папки
             let src = custom ? custom : (SOUND_BASE + file);
 
             const a = new Audio(src);
             a.volume = 1.0; 
             const p = a.play();
             if (p !== undefined) {
-                p.catch(e => { /* Игнорируем ошибки автозапуска */ });
+                p.catch(e => { });
             }
         } catch(e) {}
     }
@@ -120,7 +116,7 @@
         return arr;
     }
 
-    // --- Инициализация Шрифтов ---
+    // --- Шрифты ---
     const font = get('font', 'Arial');
     const effect = get('effect', '');
     if (font !== 'Arial' || effect) {
@@ -162,7 +158,7 @@
         const i=document.getElementById('li-img'); i.src=finalLoseImg; i.style.display='block'; 
     }
 
-    // --- Обработка данных карт ---
+    // --- Данные игры ---
     let allData = [];
     try {
         const rawNew = get('pairs', null);
@@ -185,7 +181,6 @@
     const speed = parseFloat(get('speed', 2));
     const cSize = parseInt(get('csize', 140));
 
-    // Прогресс бар
     document.getElementById('p-bar').style.backgroundColor = get('pcolor', '#03dac6');
     
     // Жизни
@@ -249,7 +244,7 @@
                 break;
             }
         }
-    } catch(e) {} // Защита от ошибок sessionStorage
+    } catch(e) {}
     
     if (!built) {
         built = buildDeckNoRepeat();
@@ -282,7 +277,7 @@
     const bounds0 = getBounds();
     const placed = [];
 
-    // --- Стили Карточек (Рамка или Картинка) ---
+    // --- Стили Карточек ---
     const bgImgUrl = get('cimg','');
     let cardStyleBase = '';
     if (bgImgUrl) {
@@ -300,7 +295,6 @@
         el.className = `card ${get('effect','')}`;
         el.style.cssText = `width:${cSize}px; height:${cSize}px; ${cardStyleBase} font-size:${fSize}; color:${get('fcolor','#fff')}; display: flex; align-items: center; justify-content: center;`;
 
-        // Контент карточки (текст или картинка внутри)
         if (String(item.t).startsWith('http')) {
              el.innerHTML = `<img src="${item.t}" style="max-width: 85%; max-height: 85%; object-fit: contain; pointer-events: none; border-radius: 4px;">`;
         } else {
@@ -308,7 +302,10 @@
         }
 
         el.onclick = () => {
-            if(selected.length < 2 && !el.dataset.done) {
+            // !!! ИСПРАВЛЕНИЕ БАГА: Если карта уже выбрана (sel) или уже угадана (done) -> НЕЛЬЗЯ нажать
+            if (el.classList.contains('sel') || el.dataset.done) return;
+
+            if(selected.length < 2) {
                 
                 playSound('click.mp3');
                 el.classList.add('sel');
@@ -323,7 +320,6 @@
                         found++;
                         fb.src = get('winimg') || DEFAULTS.winPopup;
                         
-                        // Прогресс
                         const denom = Math.max(1, activePairs.length);
                         document.getElementById('p-bar').style.width = (found/denom)*100 + '%';
 
@@ -335,7 +331,6 @@
                         });
 
                         if(found === activePairs.length) {
-                            // !!! ГЛАВНОЕ: ИГРАЕМ ЗВУК ПОБЕДЫ СРАЗУ В МОМЕНТ КЛИКА !!!
                             if (!winPlayed) {
                                 winPlayed = true;
                                 playSound('win.mp3');
@@ -368,7 +363,6 @@
                         }, 2000);
 
                         if(lives <= 0) {
-                            // !!! ГЛАВНОЕ: ИГРАЕМ ЗВУК ПРОИГРЫША СРАЗУ В МОМЕНТ КЛИКА !!!
                             if (!losePlayed) {
                                 losePlayed = true;
                                 playSound('lose.mp3');
