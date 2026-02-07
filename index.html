@@ -2,6 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link id="font-link" rel="stylesheet" href="">
     <style>
         body { margin: 0; overflow: hidden; background: transparent; height: 100vh; width: 100vw; font-family: sans-serif; }
@@ -128,11 +129,23 @@
     const lDiv = document.getElementById('lives');
     for(let i=0; i<3; i++) lDiv.innerHTML += `<div class="life" style="background-image:url('${get('lifeimg','')}')"></div>`;
 
-    // ✅ ЗВУКИ (берём из /para.proba4/sounds/)
+    // ✅ ОБНОВЛЕННАЯ ЛОГИКА ЗВУКОВ
     const SOUND_BASE = "https://natashagodlevskaya16021995-ux.github.io/para.proba4/sounds/";
     function playSound(file) {
         try {
-            const a = new Audio(SOUND_BASE + file);
+            // Определяем тип звука по имени файла
+            let type = '';
+            if(file.includes('click')) type = 's_click';
+            else if(file.includes('ok')) type = 's_ok';
+            else if(file.includes('bad')) type = 's_bad';
+            else if(file.includes('win')) type = 's_win';
+            else if(file.includes('lose')) type = 's_lose';
+
+            // Проверяем, задан ли кастомный URL в параметрах
+            let custom = get(type, '');
+            let src = custom ? custom : (SOUND_BASE + file);
+
+            const a = new Audio(src);
             a.preload = 'auto';
             a.currentTime = 0;
             a.play().catch(() => {});
@@ -245,8 +258,17 @@
     deck.forEach(item => {
         const el = document.createElement('div');
         el.className = `card ${get('effect','')}`;
-        el.innerText = item.t;
-        el.style.cssText = `width:${cSize}px; height:${cSize}px; background-image:url('${get('cimg','')}'); font-size:${fSize}; color:${get('fcolor','#fff')};`;
+        
+        // ✅ ПОДДЕРЖКА КАРТИНОК И ТЕКСТА
+        el.style.cssText = `width:${cSize}px; height:${cSize}px; background-image:url('${get('cimg','')}'); font-size:${fSize}; color:${get('fcolor','#fff')}; display: flex; align-items: center; justify-content: center;`;
+
+        if (String(item.t).startsWith('http')) {
+             // Если ссылка — вставляем картинку
+             el.innerHTML = `<img src="${item.t}" style="max-width: 85%; max-height: 85%; object-fit: contain; pointer-events: none; border-radius: 4px;">`;
+        } else {
+             // Если нет — текст
+             el.innerText = item.t;
+        }
 
         el.onclick = () => {
             if(selected.length < 2 && !el.dataset.done) {
@@ -280,6 +302,15 @@
                         if(found === activePairs.length) setTimeout(() => {
                             document.getElementById('win-screen').style.display='flex';
                             gameStarted=false;
+
+                            // ✅ КОНФЕТТИ ПРИ ПОБЕДЕ
+                            try {
+                                confetti({
+                                    particleCount: 150,
+                                    spread: 70,
+                                    origin: { y: 0.6 }
+                                });
+                            } catch(e){}
 
                             // ✅ звук победы (1 раз)
                             if (!winPlayed) { winPlayed = true; playSound('win.mp3'); }
