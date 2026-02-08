@@ -81,7 +81,6 @@
     const params = new URLSearchParams(window.location.search);
     const get = (n, d) => { let v = params.get(n); return (v===null||v==='null'||v==='') ? d : v; };
     
-    // БАЗОВЫЕ ПУТИ К ФАЙЛАМ НА GITHUB
     const BASE_URL = "https://natashagodlevskaya16021995-ux.github.io/para.proba4/";
     const SOUND_BASE = BASE_URL + "sounds/";
     
@@ -89,10 +88,8 @@
         winPopup: 'https://media.tenor.com/423qsjyZqSsAAAAi/yes.gif', losePopup: 'https://media.tenor.com/Va6g-Dh5pSkAAAAi/bunny-nope.gif', life: 'https://media.tenor.com/iNdYjrgY90MAAAAi/red-heart-bumping.gif', 
         winScreen: 'https://media.tenor.com/CuKhzQTvzV0AAAAi/%D0%BA%D0%BE%D1%82%D1%91%D0%BD%D0%BE%D0%BA-%D0%B3%D0%B0%D0%B2-kitten-named-woof.gif', loseScreen: 'https://media.tenor.com/I5bwJxpmFAsAAAAi/crying-sad.gif',
         toImg: 'https://media.tenor.com/eLdxy73pAQcAAAAi/cant-wait-countdown.gif',
-        
-        // НОВАЯ КАРТИНКА БАБОЧКИ ИЗ ПАПКИ images
+        // НОВАЯ ССЫЛКА НА БАБОЧКУ
         butterfly: BASE_URL + 'images/babochka.png',
-        
         snd_timeout: SOUND_BASE + 'time.mp3'
     };
 
@@ -155,7 +152,13 @@
     function buildDeck() {
         let base = [...allData]; shuffle(base);
         let active = base.slice(0, limit), deck = [];
-        active.forEach((p, i) => { deck.push({t:p.a, id:i}, {t:p.b, id:i}); });
+        
+        // ВАЖНО: При создании добавляем поле dest (кого искать)
+        active.forEach((p, i) => { 
+            deck.push({t:p.a, dest:p.b, id:i}); // A ищет B
+            deck.push({t:p.b, dest:p.a, id:i}); // B ищет A
+        });
+        
         const activeText = new Set(); active.forEach(p => { activeText.add(String(p.a)); activeText.add(String(p.b)); });
         let trapPool = [];
         base.slice(limit).forEach(p => { const pick = Math.random() > 0.5 ? p.a : p.b; if (!activeText.has(String(pick))) trapPool.push(pick); });
@@ -185,6 +188,11 @@
 
     deck.forEach(item => {
         const el = document.createElement('div'); el.className = `card ${get('effect','')}`;
+        
+        // Сохраняем в дата-атрибуты для проверки
+        el.dataset.t = item.t;
+        el.dataset.dest = item.dest || ''; // Ловушки не имеют цели
+
         if (!finalBg) el.classList.add('filter-shadow');
         const isImg = String(item.t).startsWith('http');
         
@@ -202,11 +210,21 @@
             if (el.classList.contains('sel')) { el.classList.remove('sel'); selected = selected.filter(s => s.el !== el); return; }
 
             if (selected.length < 2) {
-                playSound('click.mp3'); el.classList.add('sel'); selected.push({el, id: item.id});
+                playSound('click.mp3'); el.classList.add('sel'); selected.push({el, id: item.id, t: item.t, dest: item.dest});
                 if (selected.length === 2) {
                     const [s1, s2] = selected, fb = document.getElementById('fb');
                     inputBlocked = true; 
-                    if (s1.id === s2.id) {
+                    
+                    // --- УМНАЯ ПРОВЕРКА ---
+                    // 1. Либо ID совпадают (родная пара)
+                    // 2. Либо текст S2 совпадает с целью S1 (перекрестное совпадение)
+                    // 3. Либо текст S1 совпадает с целью S2
+                    let isMatch = false;
+                    if (s1.id === s2.id) isMatch = true;
+                    else if (s1.dest && s1.dest === s2.t) isMatch = true;
+                    else if (s2.dest && s2.dest === s1.t) isMatch = true;
+
+                    if (isMatch) {
                         found++; combo++; updateScore(100 + (combo-1)*20); 
                         fb.src = get('winimg') || DEFAULTS.winPopup;
                         document.getElementById('p-bar').style.width = (found/active.length)*100 + '%';
