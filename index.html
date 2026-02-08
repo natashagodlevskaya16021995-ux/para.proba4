@@ -5,11 +5,11 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link id="font-link" rel="stylesheet" href="">
     <style>
-        body { margin: 0; overflow: hidden; background: transparent; height: 100vh; width: 100vw; font-family: sans-serif; }
+        body { margin: 0; overflow: hidden; background: transparent; height: 100vh; width: 100vw; font-family: -apple-system, sans-serif; }
         #ui { position: fixed; top: 10px; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 100; pointer-events: none; }
         #lives { display: flex; gap: 8px; margin-bottom: 10px; }
         .life { width: 30px; height: 30px; background-size: contain; background-repeat: no-repeat; transition: 0.3s; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
-        #p-wrap { width: 200px; height: 10px; background: rgba(255,255,255,0.3); border-radius: 10px; overflow: hidden; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.3); }
+        #p-wrap { width: 200px; height: 8px; background: rgba(255,255,255,0.3); border-radius: 10px; overflow: hidden; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2); }
         #p-bar { width: 0%; height: 100%; transition: 0.3s; }
 
         .card {
@@ -26,63 +26,64 @@
             box-sizing: border-box;
             user-select: none;
             transition: filter .4s ease, transform .18s ease;
-            border-style: solid;
+            /* Убираем все дефолтные стили, всё через JS */
+            background-color: transparent;
+            border: none;
         }
 
         .card.sel {
-            filter: drop-shadow(0 0 15px rgba(255,255,255,0.9)) drop-shadow(0 0 25px rgba(0,122,255,0.6));
+            filter: drop-shadow(0 0 15px rgba(255,255,255,0.9)) drop-shadow(0 0 25px rgba(0,122,255,0.5));
             transform: scale(1.05);
             z-index: 50;
         }
         
-        .card.bad { filter: drop-shadow(0 0 10px rgba(255,59,48,0.8)); }
-        .card.good { filter: drop-shadow(0 0 10px rgba(52,199,89,0.8)); }
+        .card.bad { filter: drop-shadow(0 0 12px rgba(255,59,48,0.7)); }
+        .card.good { filter: drop-shadow(0 0 12px rgba(52,199,89,0.7)); }
 
-        /* --- НОВЫЙ СТИЛЬ "СТЕКЛО" (IPHONE STYLE) --- */
+        /* --- СТИЛЬ IPHONE (ГЛАЗУРЬ) --- */
         .overlay { 
             position: fixed; inset: 0; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             z-index: 2000; 
-            background: rgba(0, 0, 0, 0.2); /* Слегка затемненный фон */
-            backdrop-filter: blur(4px); /* Размытие фона игры */
+            background: rgba(0, 0, 0, 0.15); 
+            backdrop-filter: blur(12px); 
+            -webkit-backdrop-filter: blur(12px);
         }
         
         .glass-box {
-            background: rgba(255, 255, 255, 0.75); /* Полупрозрачный белый */
-            backdrop-filter: blur(20px); /* Сильное размытие внутри ("матовое стекло") */
-            -webkit-backdrop-filter: blur(20px);
-            padding: 30px 40px;
-            border-radius: 24px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            padding: 25px 30px;
+            border-radius: 30px;
+            box-shadow: 0 15px 45px rgba(0, 0, 0, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.4);
             text-align: center;
-            max-width: 320px;
-            width: 85%;
-            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            color: #1c1c1e;
+            max-width: 300px; /* Уменьшили размер */
+            width: 80%;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        .glass-box img { max-height: 150px; margin-bottom: 15px; border-radius: 12px; display: none; margin-left: auto; margin-right: auto; }
-        .glass-box h1 { margin: 0 0 10px 0; font-size: 28px; color: #000; }
-        .glass-box p { margin: 0 0 20px 0; font-size: 16px; color: #3c3c43; }
+        .glass-box h1 { margin: 0 0 8px 0; font-size: 24px; color: #000; font-weight: 700; }
+        .glass-box p { margin: 0 0 20px 0; font-size: 15px; color: #3a3a3c; line-height: 1.3; }
 
         .btn-style { 
-            padding: 12px 30px; 
+            padding: 12px 24px; 
             cursor: pointer; 
             border-radius: 14px; 
             border: none; 
             font-weight: 600; 
-            font-size: 17px; 
+            font-size: 16px; 
             color: #fff; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1); 
             transition: 0.2s;
             width: 100%;
         }
-        .btn-style:active { transform: scale(0.96); }
+        .btn-style:active { transform: scale(0.97); }
 
-        #fb { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 160px; height: 160px; z-index: 1000; transition: 0.3s; pointer-events: none; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.2)); }
+        #fb { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 160px; height: 160px; z-index: 1000; transition: 0.3s; pointer-events: none; }
     </style>
 </head>
 <body>
@@ -99,7 +100,7 @@
 
     <div id="win-screen" class="overlay" style="display:none;">
         <div class="glass-box">
-            <img id="wi-img">
+            <img id="wi-img" style="max-height:120px; border-radius:15px; margin-bottom:15px; display:none; margin-inline:auto;">
             <h1 id="wt"></h1>
             <p id="wd"></p>
             <button class="btn-style rb" onclick="location.reload()"></button>
@@ -108,7 +109,7 @@
 
     <div id="lose-screen" class="overlay" style="display:none;">
         <div class="glass-box">
-            <img id="li-img">
+            <img id="li-img" style="max-height:120px; border-radius:15px; margin-bottom:15px; display:none; margin-inline:auto;">
             <h1 id="lt"></h1>
             <p id="ld"></p>
             <button class="btn-style rb" onclick="location.reload()"></button>
@@ -118,7 +119,6 @@
 <script>
     const params = new URLSearchParams(window.location.search);
     const get = (n, d) => { let v = params.get(n); return (v===null||v==='null'||v==='') ? d : v; };
-    
     const SOUND_BASE = "https://natashagodlevskaya16021995-ux.github.io/para.proba4/sounds/";
     const DEFAULT_BG_IMAGE = "https://media.tenor.com/5fq2aN6QFB4AAAAi/blue-butterfly-colector.gif"; 
 
@@ -138,8 +138,7 @@
             let src = custom ? custom : (SOUND_BASE + file);
             const a = new Audio(src);
             a.volume = 1.0; 
-            const p = a.play();
-            if (p !== undefined) p.catch(e => { });
+            a.play().catch(e => { });
         } catch(e) {}
     }
 
@@ -151,7 +150,6 @@
         return arr;
     }
 
-    // --- Шрифты ---
     const font = get('font', 'Arial');
     const effect = get('effect', '');
     if (font !== 'Arial' || effect) {
@@ -165,72 +163,42 @@
     }
     document.body.style.fontFamily = `'${font}', sans-serif`;
 
-    // --- Тексты и Кнопки ---
-    const pColor = get('pcolor', '#007aff'); // Синий по умолчанию
-
+    const pColor = get('pcolor', '#007aff'); 
     document.getElementById('st-t').innerText = get('st_t', 'Привет!');
     document.getElementById('st-d').innerText = get('st_d', 'Найди пары');
-    
-    const stBtn = document.getElementById('st-b');
-    stBtn.innerText = get('st_b', 'ИГРАТЬ');
-    stBtn.style.background = pColor;
-
+    document.getElementById('st-b').innerText = get('st_b', 'ИГРАТЬ');
+    document.getElementById('st-b').style.background = pColor;
     document.getElementById('wt').innerText = get('wt', 'Победа!');
     document.getElementById('wd').innerText = get('wd', 'Молодец!');
     document.getElementById('lt').innerText = get('lt', 'Ой!');
     document.getElementById('ld').innerText = get('ld', 'Попробуй еще раз');
-
-    const rbText = get('rb', 'ЗАНОВО');
     document.querySelectorAll('.rb').forEach(b => {
-        b.innerText = rbText;
+        b.innerText = get('rb', 'ЗАНОВО');
         b.style.background = pColor;
     });
 
     const finalWinImg = get('wi') || DEFAULTS.winScreen;
-    if(finalWinImg) { 
-        const i=document.getElementById('wi-img'); i.src=finalWinImg; i.style.display='block'; 
-    }
+    if(finalWinImg) { const i=document.getElementById('wi-img'); i.src=finalWinImg; i.style.display='block'; }
     const finalLoseImg = get('li') || DEFAULTS.loseScreen;
-    if(finalLoseImg) { 
-        const i=document.getElementById('li-img'); i.src=finalLoseImg; i.style.display='block'; 
-    }
+    if(finalLoseImg) { const i=document.getElementById('li-img'); i.src=finalLoseImg; i.style.display='block'; }
 
     let allData = [];
     try {
         const rawNew = get('pairs', null);
-        const rawOld = get('all_data', '[]');
-        if(rawNew && rawNew !== 'null' && rawNew !== '') allData = JSON.parse(rawNew);
-        else allData = JSON.parse(rawOld);
+        allData = (rawNew && rawNew !== 'null' && rawNew !== '') ? JSON.parse(rawNew) : [];
     } catch(e) { allData = []; }
 
     const limit = parseInt(get('limit', 2));
     const extraCount = parseInt(params.has('extraCount') ? get('extraCount', 0) : get('extra_c', 0));
-    
     let fSize = get('fsize', '25px');
     if (/^\d+$/.test(fSize)) fSize = fSize + 'px';
-    
     const speed = parseFloat(get('speed', 2));
     const cSize = parseInt(get('csize', 140));
 
     document.getElementById('p-bar').style.backgroundColor = pColor;
-    
     const lifeUrl = get('lifeimg') || DEFAULTS.life;
     const lDiv = document.getElementById('lives');
-    if (lifeUrl) {
-        for(let i=0; i<3; i++) lDiv.innerHTML += `<div class="life" style="background-image:url('${lifeUrl}')"></div>`;
-    }
-
-    function getBounds() {
-        const ui = document.getElementById('ui');
-        const r = ui.getBoundingClientRect();
-        const topSafe = Math.ceil(r.bottom + 10);
-        return {
-            minX: 0,
-            maxX: Math.max(0, window.innerWidth - cSize),
-            minY: Math.min(window.innerHeight - cSize, topSafe),
-            maxY: Math.max(0, window.innerHeight - cSize)
-        };
-    }
+    if (lifeUrl) for(let i=0; i<3; i++) lDiv.innerHTML += `<div class="life" style="background-image:url('${lifeUrl}')"></div>`;
 
     function buildDeckNoRepeat() {
         const base = allData.slice();
@@ -256,40 +224,21 @@
     }
 
     const memoryKey = 'para.proba4.lastSig';
-    let built = null;
-    try {
-        for (let attempt = 0; attempt < 8; attempt++) {
-            const candidate = buildDeckNoRepeat();
-            const lastSig = sessionStorage.getItem(memoryKey);
-            if (!lastSig || candidate.sig !== lastSig || allData.length <= limit + 1) {
-                built = candidate;
-                sessionStorage.setItem(memoryKey, candidate.sig);
-                break;
-            }
-        }
-    } catch(e) {}
-    
-    if (!built) {
-        built = buildDeckNoRepeat();
-        try { sessionStorage.setItem(memoryKey, built.sig); } catch(e){}
-    }
+    let built = buildDeckNoRepeat();
+    try { sessionStorage.setItem(memoryKey, built.sig); } catch(e){}
 
     const deck = built.deck;
     const activePairs = built.activePairs;
     let lives = 3, found = 0, selected = [], cards = [], gameStarted = false;
-    let winPlayed = false;
-    let losePlayed = false;
 
     function placeNonOverlapping(existing, bounds) {
         const minDist = Math.max(30, Math.floor(cSize * 0.85));
-        const tries = 220;
-        for (let t = 0; t < tries; t++) {
+        for (let t = 0; t < 220; t++) {
             const x = bounds.minX + Math.random() * (bounds.maxX - bounds.minX);
             const y = bounds.minY + Math.random() * (bounds.maxY - bounds.minY);
             let ok = true;
             for (const p of existing) {
-                const dx = (p.x - x);
-                const dy = (p.y - y);
+                const dx = (p.x - x); const dy = (p.y - y);
                 if ((dx*dx + dy*dy) < (minDist*minDist)) { ok = false; break; }
             }
             if (ok) return { x, y };
@@ -297,112 +246,75 @@
         return { x: bounds.minX + Math.random() * (bounds.maxX - bounds.minX), y: bounds.minY + Math.random() * (bounds.maxY - bounds.minY) };
     }
 
-    const bounds0 = getBounds();
+    const bounds0 = (function() {
+        const ui = document.getElementById('ui');
+        const r = ui.getBoundingClientRect();
+        return { minX: 0, maxX: Math.max(0, window.innerWidth - cSize), minY: Math.min(window.innerHeight - cSize, Math.ceil(r.bottom + 10)), maxY: Math.max(0, window.innerHeight - cSize) };
+    })();
     const placed = [];
 
-    // --- ЛОГИКА ФОНА ---
+    // --- УМНАЯ ЛОГИКА ФОНА ---
     const customBg = get('cimg','');
     const useDefBg = get('def_bg') === '1';
-    
-    let finalBgUrl = '';
-    if (useDefBg) finalBgUrl = DEFAULT_BG_IMAGE;
-    else if (customBg) finalBgUrl = customBg;
+    let finalBgUrl = useDefBg ? DEFAULT_BG_IMAGE : customBg;
 
-    const bgC = get('bg_c', 'rgba(30,30,30,0.8)');
+    const bgC = get('bg_c', 'rgba(255,255,255,0.8)');
     const bC = get('b_c', '#ffffff');
-    const bW = get('b_w', '2');
-    const bR = get('b_r', '15');
+    const bW = get('b_w', '1');
+    const bR = get('b_r', '20');
 
     deck.forEach(item => {
         const el = document.createElement('div');
         el.className = `card ${get('effect','')}`;
-        
         const isImage = String(item.t).startsWith('http');
         
-        let style = '';
-        
-        if (isImage) {
-            style = `background: transparent; border: none; box-shadow: none;`;
+        // РЕШАЕМ: Нужна ли рамка и фон?
+        let cardStyle = '';
+        if (finalBgUrl) {
+            // Если выбран фон-бабочка -> у всех карточек этот фон
+            cardStyle = `background-image:url('${finalBgUrl}'); background-size:cover; border:none; box-shadow: 0 4px 10px rgba(0,0,0,0.1);`;
         } else {
-            if (finalBgUrl) {
-                style = `background-image:url('${finalBgUrl}'); border:none; box-shadow: 0 4px 6px rgba(0,0,0,0.3);`;
+            if (isImage) {
+                // Если фона нет и это картинка -> полная прозрачность
+                cardStyle = `background: transparent; border: none; box-shadow: none;`;
             } else {
-                style = `background: ${bgC}; border: ${bW}px solid ${bC}; border-radius: ${bR}px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);`;
+                // Если фона нет и это текст -> рисуем рамку
+                cardStyle = `background: ${bgC}; border: ${bW}px solid ${bC}; border-radius: ${bR}px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);`;
             }
         }
 
-        el.style.cssText = `width:${cSize}px; height:${cSize}px; ${style} font-size:${fSize}; color:${get('fcolor','#fff')}; display: flex; align-items: center; justify-content: center;`;
+        el.style.cssText = `width:${cSize}px; height:${cSize}px; ${cardStyle} font-size:${fSize}; color:${get('fcolor','#333')};`;
 
-        if (isImage) {
-             el.innerHTML = `<img src="${item.t}" style="max-width: 95%; max-height: 95%; object-fit: contain; pointer-events: none;">`;
-        } else {
-             el.innerText = item.t;
-        }
+        if (isImage) el.innerHTML = `<img src="${item.t}" style="max-width: 90%; max-height: 90%; object-fit: contain; pointer-events: none;">`;
+        else el.innerText = item.t;
 
         el.onclick = () => {
-            if (el.classList.contains('sel') || el.dataset.done) return;
-
-            if(selected.length < 2) {
-                playSound('click.mp3');
-                el.classList.add('sel');
-                selected.push({el, id: item.id});
-
-                if(selected.length === 2) {
-                    const [s1, s2] = selected;
-                    const fb = document.getElementById('fb');
-
-                    if(s1.id === s2.id && s1.id >= 0) {
-                        found++;
-                        fb.src = get('winimg') || DEFAULTS.winPopup;
-                        const denom = Math.max(1, activePairs.length);
-                        document.getElementById('p-bar').style.width = (found/denom)*100 + '%';
-
-                        selected.forEach(s => {
-                            s.el.classList.remove('sel');
-                            s.el.classList.add('good');
-                            s.el.style.display = 'none';
-                            s.el.dataset.done = '1';
-                        });
-
-                        if(found === activePairs.length) {
-                            if (!winPlayed) { winPlayed = true; playSound('win.mp3'); }
-                            setTimeout(() => {
-                                document.getElementById('win-screen').style.display='flex';
-                                gameStarted=false;
-                                try { confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } }); } catch(e){}
-                            }, 1000);
-                        } else {
-                            playSound('ok.mp3');
-                        }
-                    } else {
-                        lives--; 
-                        fb.src = get('loseimg') || DEFAULTS.losePopup;
-                        const icons = document.querySelectorAll('.life');
-                        if(icons[lives]) icons[lives].style.opacity = '0.1';
-
-                        const badEls = selected.map(s => s.el);
-                        badEls.forEach(elx => {
-                            elx.classList.add('bad');
-                            elx.classList.remove('sel');
-                        });
-                        setTimeout(() => {
-                            badEls.forEach(elx => elx.classList.remove('bad'));
-                        }, 2000);
-
-                        if(lives <= 0) {
-                            if (!losePlayed) { losePlayed = true; playSound('lose.mp3'); }
-                            setTimeout(() => {
-                                document.getElementById('lose-screen').style.display='flex';
-                                gameStarted=false;
-                            }, 1000);
-                        } else {
-                            playSound('bad.mp3');
-                        }
-                    }
-                    fb.style.transform = 'translate(-50%, -50%) scale(1)';
-                    setTimeout(() => fb.style.transform = 'translate(-50%, -50%) scale(0)', 600);
-                    selected = [];
+            if (el.classList.contains('sel') || el.dataset.done || selected.length >= 2) return;
+            playSound('click.mp3');
+            el.classList.add('sel');
+            selected.push({el, id: item.id});
+            if(selected.length === 2) {
+                const [s1, s2] = selected;
+                const fb = document.getElementById('fb');
+                if(s1.id === s2.id && s1.id >= 0) {
+                    found++;
+                    fb.src = get('winimg') || DEFAULTS.winPopup;
+                    document.getElementById('p-bar').style.width = (found/Math.max(1, activePairs.length))*100 + '%';
+                    selected.forEach(s => { s.el.classList.add('good'); s.el.style.display = 'none'; s.el.dataset.done = '1'; });
+                    if(found === activePairs.length) {
+                        playSound('win.mp3');
+                        setTimeout(() => { document.getElementById('win-screen').style.display='flex'; try { confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } }); } catch(e){} }, 800);
+                    } else playSound('ok.mp3');
+                } else {
+                    lives--; fb.src = get('loseimg') || DEFAULTS.losePopup;
+                    const icons = document.querySelectorAll('.life'); if(icons[lives]) icons[lives].style.opacity = '0.1';
+                    selected.forEach(s => { s.el.classList.add('bad'); s.el.classList.remove('sel'); });
+                    setTimeout(() => { selected.forEach(s => s.el.classList.remove('bad')); selected = []; }, 1500);
+                    if(lives <= 0) { playSound('lose.mp3'); setTimeout(() => { document.getElementById('lose-screen').style.display='flex'; }, 800); }
+                    else playSound('bad.mp3');
                 }
+                fb.style.transform = 'translate(-50%, -50%) scale(1)';
+                setTimeout(() => { fb.style.transform = 'translate(-50%, -50%) scale(0)'; if(selected.length===2) selected=[]; }, 600);
             }
         };
 
@@ -413,22 +325,15 @@
         cards.push(cObj);
     });
 
-    function startGame() {
-        document.getElementById('start-screen').style.display='none';
-        gameStarted=true;
-        loop();
-    }
-
+    function startGame() { document.getElementById('start-screen').style.display='none'; gameStarted=true; loop(); }
     function loop() {
         if(!gameStarted) return;
-        const b = getBounds();
+        const b = { maxX: window.innerWidth - cSize, maxY: window.innerHeight - cSize };
         cards.forEach(c => {
             if(c.el.dataset.done) return;
             c.x += c.vx; c.y += c.vy;
-            if(c.x < b.minX) { c.x = b.minX; c.vx *= -1; }
-            if(c.x > b.maxX) { c.x = b.maxX; c.vx *= -1; }
-            if(c.y < b.minY) { c.y = b.minY; c.vy *= -1; }
-            if(c.y > b.maxY) { c.y = b.maxY; c.vy *= -1; }
+            if(c.x < 0) { c.x = 0; c.vx *= -1; } if(c.x > b.maxX) { c.x = b.maxX; c.vx *= -1; }
+            if(c.y < 50) { c.y = 50; c.vy *= -1; } if(c.y > b.maxY) { c.y = b.maxY; c.vy *= -1; }
             c.el.style.transform = `translate(${c.x}px, ${c.y}px)`;
         });
         requestAnimationFrame(loop);
