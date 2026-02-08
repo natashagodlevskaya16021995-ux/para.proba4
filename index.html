@@ -26,7 +26,7 @@
             box-sizing: border-box;
             user-select: none;
             transition: filter .4s ease, transform .18s ease;
-            border-style: solid;
+            /* Базовые стили убраны отсюда, они добавляются JS-ом */
         }
 
         .card.sel {
@@ -71,14 +71,11 @@
     </div>
 
 <script>
-    // --- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ---
     const params = new URLSearchParams(window.location.search);
     const get = (n, d) => { let v = params.get(n); return (v===null||v==='null'||v==='') ? d : v; };
     
-    // Ссылка на папку звуков
     const SOUND_BASE = "https://natashagodlevskaya16021995-ux.github.io/para.proba4/sounds/";
 
-    // Дефолтные картинки
     const DEFAULTS = {
         winPopup:  'https://media.tenor.com/423qsjyZqSsAAAAi/yes.gif', 
         losePopup: 'https://media.tenor.com/Va6g-Dh5pSkAAAAi/bunny-nope.gif', 
@@ -87,7 +84,6 @@
         loseScreen:'https://media.tenor.com/I5bwJxpmFAsAAAAi/crying-sad.gif'
     };
 
-    // --- ФУНКЦИЯ ЗВУКА ---
     function playSound(file) {
         try {
             let param = 's_' + file.replace('.mp3', '');
@@ -116,7 +112,6 @@
         return arr;
     }
 
-    // --- Шрифты ---
     const font = get('font', 'Arial');
     const effect = get('effect', '');
     if (font !== 'Arial' || effect) {
@@ -130,12 +125,10 @@
     }
     document.body.style.fontFamily = `'${font}', sans-serif`;
 
-    // --- UI Тексты ---
     document.getElementById('st-t').innerText = get('st_t', 'Привет!');
     document.getElementById('st-d').innerText = get('st_d', 'Найди пары');
     document.getElementById('st-b').innerText = get('st_b', 'ИГРАТЬ');
     document.getElementById('st-b').style.background = get('pcolor', '#03dac6');
-    
     document.getElementById('wt').innerText = get('wt', 'Победа!');
     document.getElementById('wd').innerText = get('wd', 'Молодец!');
     document.getElementById('lt').innerText = get('lt', 'Ой!');
@@ -147,7 +140,6 @@
         b.style.background = get('pcolor', '#03dac6');
     });
 
-    // --- UI Картинки ---
     const finalWinImg = get('wi') || DEFAULTS.winScreen;
     if(finalWinImg) { 
         const i=document.getElementById('wi-img'); i.src=finalWinImg; i.style.display='block'; 
@@ -158,7 +150,6 @@
         const i=document.getElementById('li-img'); i.src=finalLoseImg; i.style.display='block'; 
     }
 
-    // --- Данные игры ---
     let allData = [];
     try {
         const rawNew = get('pairs', null);
@@ -183,14 +174,12 @@
 
     document.getElementById('p-bar').style.backgroundColor = get('pcolor', '#03dac6');
     
-    // Жизни
     const lifeUrl = get('lifeimg') || DEFAULTS.life;
     const lDiv = document.getElementById('lives');
     if (lifeUrl) {
         for(let i=0; i<3; i++) lDiv.innerHTML += `<div class="life" style="background-image:url('${lifeUrl}')"></div>`;
     }
 
-    // --- Логика игры ---
     function getBounds() {
         const ui = document.getElementById('ui');
         const r = ui.getBoundingClientRect();
@@ -208,25 +197,19 @@
         shuffle(base);
         const activePairs = base.slice(0, Math.min(limit, base.length));
         const remaining = base.slice(activePairs.length);
-        
         let deck = [];
         activePairs.forEach((p, i) => { deck.push({t: p.a, id: i}); deck.push({t: p.b, id: i}); });
-
         const activeText = new Set();
         activePairs.forEach(p => { activeText.add(String(p.a)); activeText.add(String(p.b)); });
-        
         let trapPool = [];
         remaining.forEach(p => {
             const pick = Math.random() > 0.5 ? p.a : p.b;
             if (!activeText.has(String(pick))) trapPool.push(pick);
         });
-        
         trapPool = Array.from(new Set(trapPool));
         shuffle(trapPool);
-
         const finalTraps = trapPool.slice(0, Math.max(0, extraCount));
         finalTraps.forEach((t, i) => { deck.push({t: t, id: -100 - i}); });
-
         shuffle(deck);
         const sig = deck.filter(x => x.id >= 0).map(x => `${x.id}:${x.t}`).sort().join('|') + `__traps:${finalTraps.join(',')}`;
         return { deck, activePairs, sig };
@@ -277,32 +260,46 @@
     const bounds0 = getBounds();
     const placed = [];
 
-    // --- Стили Карточек ---
+    // --- НАСТРОЙКИ СТИЛЕЙ КАРТОЧЕК ---
     const bgImgUrl = get('cimg','');
-    let cardStyleBase = '';
-    if (bgImgUrl) {
-        cardStyleBase = `background-image:url('${bgImgUrl}'); border:none;`;
-    } else {
-        const bgC = get('bg_c', 'rgba(30,30,30,0.8)');
-        const bC = get('b_c', '#ffffff');
-        const bW = get('b_w', '2');
-        const bR = get('b_r', '15');
-        cardStyleBase = `background: ${bgC}; border: ${bW}px solid ${bC}; border-radius: ${bR}px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);`;
-    }
+    
+    // Получаем настройки из редактора для ТЕКСТОВЫХ карточек
+    const bgC = get('bg_c', 'rgba(30,30,30,0.8)');
+    const bC = get('b_c', '#ffffff');
+    const bW = get('b_w', '2');
+    const bR = get('b_r', '15');
 
     deck.forEach(item => {
         const el = document.createElement('div');
         el.className = `card ${get('effect','')}`;
-        el.style.cssText = `width:${cSize}px; height:${cSize}px; ${cardStyleBase} font-size:${fSize}; color:${get('fcolor','#fff')}; display: flex; align-items: center; justify-content: center;`;
+        
+        // Проверяем, картинка ли это
+        const isImage = String(item.t).startsWith('http');
+        
+        // === УМНАЯ ЛОГИКА СТИЛЕЙ ===
+        let style = '';
+        
+        if (bgImgUrl) {
+            // 1. Если есть ОБЩИЙ ФОН (подложка) из редактора -> используем его
+            style = `background-image:url('${bgImgUrl}'); border:none; box-shadow: 0 4px 6px rgba(0,0,0,0.3);`;
+        } else if (isImage) {
+            // 2. Если это КАРТИНКА и нет подложки -> ПОЛНАЯ ПРОЗРАЧНОСТЬ (чтобы не было белого квадрата)
+            style = `background: transparent; border: none; box-shadow: none;`;
+        } else {
+            // 3. Если это ТЕКСТ и нет подложки -> Рисуем рамку и фон из настроек
+            style = `background: ${bgC}; border: ${bW}px solid ${bC}; border-radius: ${bR}px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);`;
+        }
 
-        if (String(item.t).startsWith('http')) {
-             el.innerHTML = `<img src="${item.t}" style="max-width: 85%; max-height: 85%; object-fit: contain; pointer-events: none; border-radius: 4px;">`;
+        el.style.cssText = `width:${cSize}px; height:${cSize}px; ${style} font-size:${fSize}; color:${get('fcolor','#fff')}; display: flex; align-items: center; justify-content: center;`;
+
+        if (isImage) {
+             // Для картинок внутри используем contain, чтобы не обрезались крылья
+             el.innerHTML = `<img src="${item.t}" style="max-width: 95%; max-height: 95%; object-fit: contain; pointer-events: none;">`;
         } else {
              el.innerText = item.t;
         }
 
         el.onclick = () => {
-            // !!! ИСПРАВЛЕНИЕ БАГА: Если карта уже выбрана (sel) или уже угадана (done) -> НЕЛЬЗЯ нажать
             if (el.classList.contains('sel') || el.dataset.done) return;
 
             if(selected.length < 2) {
@@ -316,10 +313,8 @@
                     const fb = document.getElementById('fb');
 
                     if(s1.id === s2.id && s1.id >= 0) {
-                        // === ВЕРНО ===
                         found++;
                         fb.src = get('winimg') || DEFAULTS.winPopup;
-                        
                         const denom = Math.max(1, activePairs.length);
                         document.getElementById('p-bar').style.width = (found/denom)*100 + '%';
 
@@ -331,11 +326,7 @@
                         });
 
                         if(found === activePairs.length) {
-                            if (!winPlayed) {
-                                winPlayed = true;
-                                playSound('win.mp3');
-                            }
-                            
+                            if (!winPlayed) { winPlayed = true; playSound('win.mp3'); }
                             setTimeout(() => {
                                 document.getElementById('win-screen').style.display='flex';
                                 gameStarted=false;
@@ -344,12 +335,9 @@
                         } else {
                             playSound('ok.mp3');
                         }
-
                     } else {
-                        // === ОШИБКА ===
                         lives--; 
                         fb.src = get('loseimg') || DEFAULTS.losePopup;
-                        
                         const icons = document.querySelectorAll('.life');
                         if(icons[lives]) icons[lives].style.opacity = '0.1';
 
@@ -363,11 +351,7 @@
                         }, 2000);
 
                         if(lives <= 0) {
-                            if (!losePlayed) {
-                                losePlayed = true;
-                                playSound('lose.mp3');
-                            }
-
+                            if (!losePlayed) { losePlayed = true; playSound('lose.mp3'); }
                             setTimeout(() => {
                                 document.getElementById('lose-screen').style.display='flex';
                                 gameStarted=false;
@@ -376,7 +360,6 @@
                             playSound('bad.mp3');
                         }
                     }
-
                     fb.style.transform = 'translate(-50%, -50%) scale(1)';
                     setTimeout(() => fb.style.transform = 'translate(-50%, -50%) scale(0)', 600);
                     selected = [];
