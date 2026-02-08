@@ -7,7 +7,7 @@
     <style>
         body { margin: 0; overflow: hidden; background: transparent; height: 100vh; width: 100vw; font-family: -apple-system, sans-serif; user-select: none; }
         
-        /* --- UI --- */
+        /* UI */
         #ui { position: fixed; top: 15px; left: 0; width: 100%; display: flex; justify-content: space-between; align-items: flex-start; padding: 0 20px; box-sizing: border-box; z-index: 100; pointer-events: none; }
         .ui-group { display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
         .ui-left { align-items: flex-start; width: 150px; }
@@ -26,32 +26,21 @@
         #p-wrap { width: 160px; height: 6px; background: rgba(255,255,255,0.3); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); }
         #p-bar { width: 0%; height: 100%; transition: 0.3s; }
 
-        /* --- НОВАЯ ЗОЛОТАЯ АНИМАЦИЯ --- */
+        /* Золотая анимация */
         .gold-pop {
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            color: #FFD700; /* Золотой */
-            font-size: 48px;
-            font-weight: 900;
-            /* Яркое золотое свечение */
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: #FFD700; font-size: 48px; font-weight: 900;
             text-shadow: 0 0 15px rgba(255, 215, 0, 0.8), 0 0 30px rgba(255, 165, 0, 0.6);
-            pointer-events: none;
-            z-index: 200;
+            pointer-events: none; z-index: 200;
             animation: goldBounce 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
         }
-
         @keyframes goldBounce {
             0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
-            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); } /* Вспышка в центре */
-            100% { 
-                opacity: 0; 
-                /* Летит в правый верхний угол и уменьшается */
-                transform: translate(calc(40vw - 50%), calc(-40vh - 50%)) scale(0.4); 
-            }
+            20% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+            100% { opacity: 0; transform: translate(calc(40vw - 50%), calc(-40vh - 50%)) scale(0.4); }
         }
 
-        /* КАРТОЧКИ */
+        /* Карточки */
         .card {
             position: absolute; background-repeat: no-repeat; background-position: center; display: flex; align-items: center; justify-content: center;
             cursor: pointer; box-sizing: border-box; transition: filter .3s, transform .2s; background-color: transparent; border: none;
@@ -62,7 +51,7 @@
         .card.good { filter: drop-shadow(0 0 15px rgba(52,199,89,0.9)); }
         @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-5px);} 75% {transform: translateX(5px);} }
 
-        /* ОКНА */
+        /* Окна */
         .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 2000; background: rgba(0,0,0,0.2); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); }
         .glass-box { background: rgba(255,255,255,0.85); padding: 30px; border-radius: 32px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.5); text-align: center; max-width: 300px; width: 80%; animation: pop 0.4s cubic-bezier(0.17, 0.89, 0.32, 1.27); }
         @keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -91,13 +80,19 @@
 <script>
     const params = new URLSearchParams(window.location.search);
     const get = (n, d) => { let v = params.get(n); return (v===null||v==='null'||v==='') ? d : v; };
-    const SOUND_BASE = "https://natashagodlevskaya16021995-ux.github.io/para.proba4/sounds/";
+    
+    // БАЗОВЫЕ ПУТИ К ФАЙЛАМ НА GITHUB
+    const BASE_URL = "https://natashagodlevskaya16021995-ux.github.io/para.proba4/";
+    const SOUND_BASE = BASE_URL + "sounds/";
     
     const DEFAULTS = {
         winPopup: 'https://media.tenor.com/423qsjyZqSsAAAAi/yes.gif', losePopup: 'https://media.tenor.com/Va6g-Dh5pSkAAAAi/bunny-nope.gif', life: 'https://media.tenor.com/iNdYjrgY90MAAAAi/red-heart-bumping.gif', 
         winScreen: 'https://media.tenor.com/CuKhzQTvzV0AAAAi/%D0%BA%D0%BE%D1%82%D1%91%D0%BD%D0%BE%D0%BA-%D0%B3%D0%B0%D0%B2-kitten-named-woof.gif', loseScreen: 'https://media.tenor.com/I5bwJxpmFAsAAAAi/crying-sad.gif',
         toImg: 'https://media.tenor.com/eLdxy73pAQcAAAAi/cant-wait-countdown.gif',
-        butterfly: 'https://img.genially.com/66c6062939d07f0015973ea4/7a3549af-66d3-4ec5-9122-3fa49f981109.png',
+        
+        // НОВАЯ КАРТИНКА БАБОЧКИ ИЗ ПАПКИ images
+        butterfly: BASE_URL + 'images/babochka.png',
+        
         snd_timeout: SOUND_BASE + 'time.mp3'
     };
 
@@ -139,28 +134,15 @@
 
     let score = 0, combo = 0, timeLimit = parseInt(get('time', 0)), timerInterval;
 
-    // --- ОБНОВЛЕННАЯ ФУНКЦИЯ ОЧКОВ С ЗОЛОТОЙ АНИМАЦИЕЙ ---
     function updateScore(pts) {
         score = Math.max(0, score + pts);
-        const sb = document.getElementById('score-box'); 
-        sb.innerText = score;
-        
+        const sb = document.getElementById('score-box'); sb.innerText = score;
         if (pts > 0) {
-            // Если очки положительные - запускаем золотую летающую цифру
-            const floating = document.createElement('div');
-            floating.className = 'gold-pop';
-            floating.innerText = '+' + pts;
-            document.body.appendChild(floating);
-            // Удаляем элемент после окончания анимации (1с)
-            setTimeout(() => floating.remove(), 1000);
+            const floating = document.createElement('div'); floating.className = 'gold-pop'; floating.innerText = '+' + pts;
+            document.body.appendChild(floating); setTimeout(() => floating.remove(), 1000);
         } else {
-            // Если отрицательные - просто краснеет счетчик (старый эффект)
-            sb.style.color = '#ff3b30';
-            sb.style.transform = 'scale(1.2)';
-            setTimeout(() => {
-                sb.style.color = '#1c1c1e';
-                sb.style.transform = 'scale(1)';
-            }, 300);
+            sb.style.color = '#ff3b30'; sb.style.transform = 'scale(1.2)';
+            setTimeout(() => { sb.style.color = '#1c1c1e'; sb.style.transform = 'scale(1)'; }, 300);
         }
     }
     function formatTime(s) { let m = Math.floor(s / 60); let sec = s % 60; return `${m}:${sec < 10 ? '0' : ''}${sec}`; }
@@ -225,7 +207,7 @@
                     const [s1, s2] = selected, fb = document.getElementById('fb');
                     inputBlocked = true; 
                     if (s1.id === s2.id) {
-                        found++; combo++; updateScore(100 + (combo-1)*20); // ЗДЕСЬ ВЫЗЫВАЕТСЯ ЗОЛОТАЯ АНИМАЦИЯ
+                        found++; combo++; updateScore(100 + (combo-1)*20); 
                         fb.src = get('winimg') || DEFAULTS.winPopup;
                         document.getElementById('p-bar').style.width = (found/active.length)*100 + '%';
                         setTimeout(() => {
