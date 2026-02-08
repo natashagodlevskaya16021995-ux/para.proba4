@@ -8,8 +8,8 @@
         body { margin: 0; overflow: hidden; background: transparent; height: 100vh; width: 100vw; font-family: sans-serif; }
         #ui { position: fixed; top: 10px; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 100; pointer-events: none; }
         #lives { display: flex; gap: 8px; margin-bottom: 10px; }
-        .life { width: 30px; height: 30px; background-size: contain; background-repeat: no-repeat; transition: 0.3s; }
-        #p-wrap { width: 200px; height: 10px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; }
+        .life { width: 30px; height: 30px; background-size: contain; background-repeat: no-repeat; transition: 0.3s; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
+        #p-wrap { width: 200px; height: 10px; background: rgba(255,255,255,0.3); border-radius: 10px; overflow: hidden; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.3); }
         #p-bar { width: 0%; height: 100%; transition: 0.3s; }
 
         .card {
@@ -26,48 +26,93 @@
             box-sizing: border-box;
             user-select: none;
             transition: filter .4s ease, transform .18s ease;
-            /* Базовые стили убраны отсюда, они добавляются JS-ом */
+            border-style: solid;
         }
 
         .card.sel {
-            filter: drop-shadow(0 0 10px rgba(255,255,255,.85)) drop-shadow(0 0 22px rgba(3,218,198,.65));
-            transform: scale(1.03);
-            animation: pulseGlow .6s ease-in-out infinite alternate;
+            filter: drop-shadow(0 0 15px rgba(255,255,255,0.9)) drop-shadow(0 0 25px rgba(0,122,255,0.6));
+            transform: scale(1.05);
             z-index: 50;
         }
-        @keyframes pulseGlow {
-            from { filter: drop-shadow(0 0 8px rgba(255,255,255,.7)) drop-shadow(0 0 18px rgba(3,218,198,.45)); }
-            to   { filter: drop-shadow(0 0 14px rgba(255,255,255,.95)) drop-shadow(0 0 28px rgba(3,218,198,.75)); }
+        
+        .card.bad { filter: drop-shadow(0 0 10px rgba(255,59,48,0.8)); }
+        .card.good { filter: drop-shadow(0 0 10px rgba(52,199,89,0.8)); }
+
+        /* --- НОВЫЙ СТИЛЬ "СТЕКЛО" (IPHONE STYLE) --- */
+        .overlay { 
+            position: fixed; inset: 0; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            z-index: 2000; 
+            background: rgba(0, 0, 0, 0.2); /* Слегка затемненный фон */
+            backdrop-filter: blur(4px); /* Размытие фона игры */
+        }
+        
+        .glass-box {
+            background: rgba(255, 255, 255, 0.75); /* Полупрозрачный белый */
+            backdrop-filter: blur(20px); /* Сильное размытие внутри ("матовое стекло") */
+            -webkit-backdrop-filter: blur(20px);
+            padding: 30px 40px;
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            text-align: center;
+            max-width: 320px;
+            width: 85%;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: #1c1c1e;
         }
 
-        .card.bad { filter: drop-shadow(0 0 10px rgba(255,60,60,.9)) drop-shadow(0 0 22px rgba(255,60,60,.55)); }
-        .card.good { filter: drop-shadow(0 0 10px rgba(0,255,160,.9)) drop-shadow(0 0 22px rgba(0,255,160,.55)); }
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-        .overlay { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 2000; color: white; text-align: center; padding: 20px; background: rgba(0,0,0,0.95); }
-        .overlay img { max-height: 200px; margin-bottom: 20px; border-radius: 15px; display: none; }
-        .rb { margin-top: 20px; padding: 15px 40px; cursor: pointer; border-radius: 10px; border: none; font-weight: bold; font-size: 20px; color: #000; display: block !important; }
-        #st-b { padding: 15px 40px; cursor: pointer; border-radius: 10px; border: none; font-weight: bold; font-size: 20px; color: #000; }
-        #fb { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 160px; height: 160px; z-index: 1000; transition: 0.3s; pointer-events: none; }
+        .glass-box img { max-height: 150px; margin-bottom: 15px; border-radius: 12px; display: none; margin-left: auto; margin-right: auto; }
+        .glass-box h1 { margin: 0 0 10px 0; font-size: 28px; color: #000; }
+        .glass-box p { margin: 0 0 20px 0; font-size: 16px; color: #3c3c43; }
+
+        .btn-style { 
+            padding: 12px 30px; 
+            cursor: pointer; 
+            border-radius: 14px; 
+            border: none; 
+            font-weight: 600; 
+            font-size: 17px; 
+            color: #fff; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+            transition: 0.2s;
+            width: 100%;
+        }
+        .btn-style:active { transform: scale(0.96); }
+
+        #fb { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 160px; height: 160px; z-index: 1000; transition: 0.3s; pointer-events: none; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.2)); }
     </style>
 </head>
 <body>
     <div id="ui"><div id="lives"></div><div id="p-wrap"><div id="p-bar"></div></div></div>
     <div id="game"></div><img id="fb">
 
-    <div id="start-screen" class="overlay"><h1 id="st-t"></h1><p id="st-d"></p><button id="st-b" onclick="startGame()"></button></div>
+    <div id="start-screen" class="overlay">
+        <div class="glass-box">
+            <h1 id="st-t"></h1>
+            <p id="st-d"></p>
+            <button id="st-b" class="btn-style" onclick="startGame()"></button>
+        </div>
+    </div>
 
     <div id="win-screen" class="overlay" style="display:none;">
-        <img id="wi-img">
-        <h1 id="wt"></h1>
-        <p id="wd"></p>
-        <button class="rb" onclick="location.reload()"></button>
+        <div class="glass-box">
+            <img id="wi-img">
+            <h1 id="wt"></h1>
+            <p id="wd"></p>
+            <button class="btn-style rb" onclick="location.reload()"></button>
+        </div>
     </div>
 
     <div id="lose-screen" class="overlay" style="display:none;">
-        <img id="li-img">
-        <h1 id="lt"></h1>
-        <p id="ld"></p>
-        <button class="rb" onclick="location.reload()"></button>
+        <div class="glass-box">
+            <img id="li-img">
+            <h1 id="lt"></h1>
+            <p id="ld"></p>
+            <button class="btn-style rb" onclick="location.reload()"></button>
+        </div>
     </div>
 
 <script>
@@ -75,6 +120,7 @@
     const get = (n, d) => { let v = params.get(n); return (v===null||v==='null'||v==='') ? d : v; };
     
     const SOUND_BASE = "https://natashagodlevskaya16021995-ux.github.io/para.proba4/sounds/";
+    const DEFAULT_BG_IMAGE = "https://media.tenor.com/5fq2aN6QFB4AAAAi/blue-butterfly-colector.gif"; 
 
     const DEFAULTS = {
         winPopup:  'https://media.tenor.com/423qsjyZqSsAAAAi/yes.gif', 
@@ -88,19 +134,12 @@
         try {
             let param = 's_' + file.replace('.mp3', '');
             let custom = get(param, '');
-
-            if (custom && (custom.includes('.gif') || custom.includes('.png') || custom.includes('.jpg'))) {
-                custom = '';
-            }
-
+            if (custom && (custom.includes('.gif') || custom.includes('.png') || custom.includes('.jpg'))) custom = '';
             let src = custom ? custom : (SOUND_BASE + file);
-
             const a = new Audio(src);
             a.volume = 1.0; 
             const p = a.play();
-            if (p !== undefined) {
-                p.catch(e => { });
-            }
+            if (p !== undefined) p.catch(e => { });
         } catch(e) {}
     }
 
@@ -112,6 +151,7 @@
         return arr;
     }
 
+    // --- Шрифты ---
     const font = get('font', 'Arial');
     const effect = get('effect', '');
     if (font !== 'Arial' || effect) {
@@ -125,10 +165,16 @@
     }
     document.body.style.fontFamily = `'${font}', sans-serif`;
 
+    // --- Тексты и Кнопки ---
+    const pColor = get('pcolor', '#007aff'); // Синий по умолчанию
+
     document.getElementById('st-t').innerText = get('st_t', 'Привет!');
     document.getElementById('st-d').innerText = get('st_d', 'Найди пары');
-    document.getElementById('st-b').innerText = get('st_b', 'ИГРАТЬ');
-    document.getElementById('st-b').style.background = get('pcolor', '#03dac6');
+    
+    const stBtn = document.getElementById('st-b');
+    stBtn.innerText = get('st_b', 'ИГРАТЬ');
+    stBtn.style.background = pColor;
+
     document.getElementById('wt').innerText = get('wt', 'Победа!');
     document.getElementById('wd').innerText = get('wd', 'Молодец!');
     document.getElementById('lt').innerText = get('lt', 'Ой!');
@@ -137,14 +183,13 @@
     const rbText = get('rb', 'ЗАНОВО');
     document.querySelectorAll('.rb').forEach(b => {
         b.innerText = rbText;
-        b.style.background = get('pcolor', '#03dac6');
+        b.style.background = pColor;
     });
 
     const finalWinImg = get('wi') || DEFAULTS.winScreen;
     if(finalWinImg) { 
         const i=document.getElementById('wi-img'); i.src=finalWinImg; i.style.display='block'; 
     }
-
     const finalLoseImg = get('li') || DEFAULTS.loseScreen;
     if(finalLoseImg) { 
         const i=document.getElementById('li-img'); i.src=finalLoseImg; i.style.display='block'; 
@@ -154,14 +199,9 @@
     try {
         const rawNew = get('pairs', null);
         const rawOld = get('all_data', '[]');
-        if(rawNew && rawNew !== 'null' && rawNew !== '') {
-            allData = JSON.parse(rawNew);
-        } else {
-            allData = JSON.parse(rawOld);
-        }
-    } catch(e) {
-        allData = [];
-    }
+        if(rawNew && rawNew !== 'null' && rawNew !== '') allData = JSON.parse(rawNew);
+        else allData = JSON.parse(rawOld);
+    } catch(e) { allData = []; }
 
     const limit = parseInt(get('limit', 2));
     const extraCount = parseInt(params.has('extraCount') ? get('extraCount', 0) : get('extra_c', 0));
@@ -172,7 +212,7 @@
     const speed = parseFloat(get('speed', 2));
     const cSize = parseInt(get('csize', 140));
 
-    document.getElementById('p-bar').style.backgroundColor = get('pcolor', '#03dac6');
+    document.getElementById('p-bar').style.backgroundColor = pColor;
     
     const lifeUrl = get('lifeimg') || DEFAULTS.life;
     const lDiv = document.getElementById('lives');
@@ -260,10 +300,14 @@
     const bounds0 = getBounds();
     const placed = [];
 
-    // --- НАСТРОЙКИ СТИЛЕЙ КАРТОЧЕК ---
-    const bgImgUrl = get('cimg','');
+    // --- ЛОГИКА ФОНА ---
+    const customBg = get('cimg','');
+    const useDefBg = get('def_bg') === '1';
     
-    // Получаем настройки из редактора для ТЕКСТОВЫХ карточек
+    let finalBgUrl = '';
+    if (useDefBg) finalBgUrl = DEFAULT_BG_IMAGE;
+    else if (customBg) finalBgUrl = customBg;
+
     const bgC = get('bg_c', 'rgba(30,30,30,0.8)');
     const bC = get('b_c', '#ffffff');
     const bW = get('b_w', '2');
@@ -273,27 +317,23 @@
         const el = document.createElement('div');
         el.className = `card ${get('effect','')}`;
         
-        // Проверяем, картинка ли это
         const isImage = String(item.t).startsWith('http');
         
-        // === УМНАЯ ЛОГИКА СТИЛЕЙ ===
         let style = '';
         
-        if (bgImgUrl) {
-            // 1. Если есть ОБЩИЙ ФОН (подложка) из редактора -> используем его
-            style = `background-image:url('${bgImgUrl}'); border:none; box-shadow: 0 4px 6px rgba(0,0,0,0.3);`;
-        } else if (isImage) {
-            // 2. Если это КАРТИНКА и нет подложки -> ПОЛНАЯ ПРОЗРАЧНОСТЬ (чтобы не было белого квадрата)
+        if (isImage) {
             style = `background: transparent; border: none; box-shadow: none;`;
         } else {
-            // 3. Если это ТЕКСТ и нет подложки -> Рисуем рамку и фон из настроек
-            style = `background: ${bgC}; border: ${bW}px solid ${bC}; border-radius: ${bR}px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);`;
+            if (finalBgUrl) {
+                style = `background-image:url('${finalBgUrl}'); border:none; box-shadow: 0 4px 6px rgba(0,0,0,0.3);`;
+            } else {
+                style = `background: ${bgC}; border: ${bW}px solid ${bC}; border-radius: ${bR}px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);`;
+            }
         }
 
         el.style.cssText = `width:${cSize}px; height:${cSize}px; ${style} font-size:${fSize}; color:${get('fcolor','#fff')}; display: flex; align-items: center; justify-content: center;`;
 
         if (isImage) {
-             // Для картинок внутри используем contain, чтобы не обрезались крылья
              el.innerHTML = `<img src="${item.t}" style="max-width: 95%; max-height: 95%; object-fit: contain; pointer-events: none;">`;
         } else {
              el.innerText = item.t;
@@ -303,7 +343,6 @@
             if (el.classList.contains('sel') || el.dataset.done) return;
 
             if(selected.length < 2) {
-                
                 playSound('click.mp3');
                 el.classList.add('sel');
                 selected.push({el, id: item.id});
