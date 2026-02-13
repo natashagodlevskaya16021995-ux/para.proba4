@@ -65,7 +65,6 @@
         .btn-ios:active { transform: scale(0.96); }
         #fb { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 150px; height: 150px; z-index: 1000; transition: 0.3s; pointer-events: none; }
         
-        /* УРОВЕНЬ */
         #level-badge { font-size: 12px; text-transform: uppercase; color: #007aff; background: rgba(255,255,255,0.8); padding: 4px 8px; border-radius: 8px; margin-bottom: 5px; font-weight: 800; letter-spacing: 1px; }
     </style>
 </head>
@@ -114,7 +113,7 @@
         winPopup: 'https://media.tenor.com/423qsjyZqSsAAAAi/yes.gif', losePopup: 'https://media.tenor.com/Va6g-Dh5pSkAAAAi/bunny-nope.gif', life: 'https://media.tenor.com/iNdYjrgY90MAAAAi/red-heart-bumping.gif', 
         winScreen: 'https://media.tenor.com/CuKhzQTvzV0AAAAi/%D0%BA%D0%BE%D1%82%D1%91%D0%BD%D0%BE%D0%BA-%D0%B3%D0%B0%D0%B2-kitten-named-woof.gif', loseScreen: 'https://media.tenor.com/I5bwJxpmFAsAAAAi/crying-sad.gif',
         toImg: 'https://media.tenor.com/eLdxy73pAQcAAAAi/cant-wait-countdown.gif',
-        levelImg: 'https://media.tenor.com/d622fi2hsp4AAAAi/good-job-clapping.gif', // Картинка уровня
+        levelImg: 'https://media.tenor.com/d622fi2hsp4AAAAi/good-job-clapping.gif',
         butterfly: BASE_URL + 'images/babochka.png',
         snd_timeout: SOUND_BASE + 'time.mp3',
         iconTime: 'https://media.tenor.com/IGjQ2m8Wh7QAAAAi/clock.gif',
@@ -134,7 +133,6 @@
 
     function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
 
-    // Шрифты
     const font = get('font', 'Arial');
     const effect = get('effect', '');
     if (font !== 'Arial' || effect) {
@@ -151,7 +149,6 @@
         else el.style.background = pColor;
     });
     
-    // Тексты
     document.getElementById('st-t').innerText = get('st_t', 'Найди пары'); 
     document.getElementById('st-d').innerText = get('st_d', 'Успехов!'); 
     document.getElementById('st-b').innerText = get('st_b', 'ИГРАТЬ');
@@ -159,7 +156,7 @@
     document.getElementById('to-img').src = get('to_i') || DEFAULTS.toImg;
     document.getElementById('icon-time').src = get('icon_time') || DEFAULTS.iconTime;
     document.getElementById('icon-score').src = get('icon_score') || DEFAULTS.iconScore;
-    document.getElementById('lvl-img').src = DEFAULTS.levelImg; // Картинка между уровнями
+    document.getElementById('lvl-img').src = DEFAULTS.levelImg;
 
     document.getElementById('wt').innerText = get('wt', 'Победа!'); document.getElementById('wd').innerText = get('wd', 'Молодец!');
     document.getElementById('lt').innerText = get('lt', 'Ой!'); document.getElementById('ld').innerText = get('ld', 'Попробуй еще раз');
@@ -168,17 +165,14 @@
     const finalWinImg = get('wi') || DEFAULTS.winScreen; if(finalWinImg) { let i=document.getElementById('wi-img'); i.src=finalWinImg; i.style.display='block'; }
     const finalLoseImg = get('li') || DEFAULTS.loseScreen; if(finalLoseImg) { let i=document.getElementById('li-img'); i.src=finalLoseImg; i.style.display='block'; }
 
-    // --- ЛОГИКА УРОВНЕЙ ---
     let currentLevel = 1;
     const isCampaign = get('campaign') === '1';
     let pairsLimit = parseInt(get('limit', 2));
     let baseSpeed = parseFloat(get('speed', 2));
     
-    // Глобальные переменные
     let score = 0, combo = 0, timeLimit = parseInt(get('time', 0)), timerInterval;
     let allData = []; try { allData = JSON.parse(get('pairs', '[]')); } catch(e) {}
     
-    // Обновление UI уровня
     if(isCampaign) {
         document.getElementById('level-badge').style.display = 'block';
         document.getElementById('level-badge').innerText = 'УРОВЕНЬ ' + currentLevel;
@@ -210,18 +204,19 @@
     const finalBg = useDefBg ? DEFAULTS.butterfly : customBg;
     const bgC = get('bg_c', 'rgba(255,255,255,0.8)'), bC = get('b_c', '#ffffff'), bW = get('b_w', '1'), bR = get('b_r', '20');
 
-    // Переменные игры
     let active = [], deck = [], lives = 3, found = 0, selected = [], cards = [], gameStarted = false, inputBlocked = false;
 
-    // Сборка колоды для текущего уровня
     function buildDeck() {
         let base = [...allData]; shuffle(base);
-        // Если кампания - берем pairsLimit, но не больше чем всего слов
         let count = Math.min(pairsLimit, base.length);
         active = base.slice(0, count);
         deck = [];
         
-        active.forEach((p, i) => { deck.push({t:p.a, dest:p.b, id:i}); deck.push({t:p.b, dest:p.a, id:i}); });
+        // !!! ИСПРАВЛЕННАЯ ЛОГИКА: Добавляем dest для каждого элемента
+        active.forEach((p, i) => { 
+            deck.push({t:p.a, dest:p.b, id:i}); // A ищет B
+            deck.push({t:p.b, dest:p.a, id:i}); // B ищет A
+        });
         
         const activeText = new Set(); active.forEach(p => { activeText.add(String(p.a)); activeText.add(String(p.b)); });
         let trapPool = [];
@@ -235,13 +230,12 @@
 
     function initGame() {
         buildDeck();
-        document.getElementById('game').innerHTML = ''; // Очистка
+        document.getElementById('game').innerHTML = '';
         cards = []; placed = []; selected = []; found = 0;
         document.getElementById('p-bar').style.width = '0%';
         lives = 3; 
         renderLives();
         
-        // Сброс таймера на старт
         clearInterval(timerInterval);
         timeLimit = parseInt(get('time', 0)); 
         if(timeLimit > 0) {
@@ -255,7 +249,11 @@
 
         deck.forEach(item => {
             const el = document.createElement('div'); el.className = `card ${get('effect','')}`;
-            el.dataset.t = item.t; el.dataset.dest = item.dest || '';
+            
+            // Сохраняем данные для проверки в элемент
+            el.dataset.t = item.t;
+            el.dataset.dest = item.dest || '';
+
             if (!finalBg) el.classList.add('filter-shadow');
             const isImg = String(item.t).startsWith('http');
             
@@ -273,14 +271,19 @@
                 if (el.classList.contains('sel')) { el.classList.remove('sel'); selected = selected.filter(s => s.el !== el); return; }
 
                 if (selected.length < 2) {
-                    playSound('click.mp3'); el.classList.add('sel'); selected.push({el, id: item.id, t: item.t, dest: item.dest});
+                    playSound('click.mp3'); el.classList.add('sel'); 
+                    // Пушим с полным объектом
+                    selected.push({el, id: item.id, t: item.t, dest: item.dest});
+                    
                     if (selected.length === 2) {
                         const [s1, s2] = selected, fb = document.getElementById('fb');
                         inputBlocked = true; 
+                        
+                        // === УМНАЯ ПРОВЕРКА (ВОССТАНОВЛЕНА) ===
                         let isMatch = false;
-                        if (s1.id === s2.id) isMatch = true;
-                        else if (s1.dest && s1.dest === s2.t) isMatch = true;
-                        else if (s2.dest && s2.dest === s1.t) isMatch = true;
+                        if (s1.id === s2.id) isMatch = true; // Родная пара
+                        else if (s1.dest && s1.dest === s2.t) isMatch = true; // A ищет B
+                        else if (s2.dest && s2.dest === s1.t) isMatch = true; // B ищет A
 
                         if (isMatch) {
                             found++; combo++; updateScore(100 + (combo-1)*20); 
@@ -292,7 +295,6 @@
                                 
                                 if (found === active.length) { 
                                     clearInterval(timerInterval);
-                                    // ПРОВЕРКА НА УРОВНИ
                                     if (isCampaign && pairsLimit < allData.length) {
                                         playSound('win.mp3');
                                         setTimeout(() => document.getElementById('level-screen').style.display='flex', 800);
@@ -330,15 +332,19 @@
 
     function placeNonOverlapping(existing) {
         const bounds0 = getBounds();
+        const repulsionDist = cSize + 20; // Дистанция отталкивания для спавна
         for (let t = 0; t < 220; t++) {
             const x = bounds0.minX + Math.random() * (bounds0.maxX - bounds0.minX);
             const y = bounds0.minY + Math.random() * (bounds0.maxY - bounds0.minY);
-            let ok = true; for (const p of existing) { if ((p.x-x)**2 + (p.y-y)**2 < (cSize*0.85)**2) { ok = false; break; } }
+            let ok = true; 
+            for (const p of existing) { 
+                if ((p.x-x)**2 + (p.y-y)**2 < repulsionDist**2) { ok = false; break; } 
+            }
             if (ok) return { x, y };
-        } return { x: bounds0.minX, y: bounds0.minY };
+        } 
+        return { x: bounds0.minX, y: bounds0.minY };
     }
 
-    // --- УПРАВЛЕНИЕ ---
     function startGame() {
         document.getElementById('start-screen').style.display='none'; 
         initGame();
@@ -359,8 +365,8 @@
     function nextLevel() {
         document.getElementById('level-screen').style.display = 'none';
         currentLevel++;
-        pairsLimit++; // Увеличиваем сложность
-        baseSpeed += 0.2; // Чуть быстрее
+        pairsLimit++; 
+        baseSpeed += 0.2; 
         document.getElementById('level-badge').innerText = 'УРОВЕНЬ ' + currentLevel;
         initGame();
         startTimer();
