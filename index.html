@@ -149,8 +149,9 @@
         else el.style.background = pColor;
     });
     
+    // Тексты (ОБНОВЛЕНО ПО УКАЗАНИЮ)
     document.getElementById('st-t').innerText = get('st_t', 'Найди пары'); 
-    document.getElementById('st-d').innerText = get('st_d', 'Успехов!'); 
+    document.getElementById('st-d').innerText = get('st_d', 'Будь осторожен, есть лишние карточки.'); 
     document.getElementById('st-b').innerText = get('st_b', 'ИГРАТЬ');
     document.getElementById('to-t').innerText = get('to_t', 'Время вышло!'); document.getElementById('to-d').innerText = get('to_d', 'Но ты можешь закончить.'); document.getElementById('to-b').innerText = 'ПРОДОЛЖИТЬ';
     document.getElementById('to-img').src = get('to_i') || DEFAULTS.toImg;
@@ -167,6 +168,8 @@
 
     let currentLevel = 1;
     const isCampaign = get('campaign') === '1';
+    // Читаем максимальное количество уровней (по дефолту 100, если не задано, чтоб шло пока есть слова)
+    const maxLevels = parseInt(get('levels', 100)); 
     let pairsLimit = parseInt(get('limit', 2));
     let baseSpeed = parseFloat(get('speed', 2));
     
@@ -212,10 +215,10 @@
         active = base.slice(0, count);
         deck = [];
         
-        // !!! ИСПРАВЛЕННАЯ ЛОГИКА: Добавляем dest для каждого элемента
+        // ВАЖНО: Умная логика (dest) сохранена
         active.forEach((p, i) => { 
-            deck.push({t:p.a, dest:p.b, id:i}); // A ищет B
-            deck.push({t:p.b, dest:p.a, id:i}); // B ищет A
+            deck.push({t:p.a, dest:p.b, id:i}); 
+            deck.push({t:p.b, dest:p.a, id:i}); 
         });
         
         const activeText = new Set(); active.forEach(p => { activeText.add(String(p.a)); activeText.add(String(p.b)); });
@@ -250,7 +253,7 @@
         deck.forEach(item => {
             const el = document.createElement('div'); el.className = `card ${get('effect','')}`;
             
-            // Сохраняем данные для проверки в элемент
+            // Сохраняем данные для проверки
             el.dataset.t = item.t;
             el.dataset.dest = item.dest || '';
 
@@ -272,7 +275,6 @@
 
                 if (selected.length < 2) {
                     playSound('click.mp3'); el.classList.add('sel'); 
-                    // Пушим с полным объектом
                     selected.push({el, id: item.id, t: item.t, dest: item.dest});
                     
                     if (selected.length === 2) {
@@ -295,7 +297,8 @@
                                 
                                 if (found === active.length) { 
                                     clearInterval(timerInterval);
-                                    if (isCampaign && pairsLimit < allData.length) {
+                                    // ПРОВЕРКА: Если кампания И не достигнут лимит уровней И есть еще слова
+                                    if (isCampaign && currentLevel < maxLevels && pairsLimit < allData.length) {
                                         playSound('win.mp3');
                                         setTimeout(() => document.getElementById('level-screen').style.display='flex', 800);
                                     } else {
@@ -332,7 +335,7 @@
 
     function placeNonOverlapping(existing) {
         const bounds0 = getBounds();
-        const repulsionDist = cSize + 20; // Дистанция отталкивания для спавна
+        const repulsionDist = cSize + 20; 
         for (let t = 0; t < 220; t++) {
             const x = bounds0.minX + Math.random() * (bounds0.maxX - bounds0.minX);
             const y = bounds0.minY + Math.random() * (bounds0.maxY - bounds0.minY);
