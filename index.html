@@ -2,28 +2,59 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: transparent; height: 100vh; width: 100vw; font-family: -apple-system, sans-serif; user-select: none; }
+        
+        /* UI */
         #ui { position: fixed; top: 15px; left: 0; width: 100%; display: flex; justify-content: space-between; align-items: flex-start; padding: 0 20px; box-sizing: border-box; z-index: 100; pointer-events: none; }
         .ui-group { display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
         .ui-left { align-items: flex-start; width: 150px; }
         .ui-center { align-items: center; flex-grow: 1; }
         .ui-right { align-items: flex-end; width: 150px; }
-        .glass-tag { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(10px); padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 4px 15px rgba(0,0,0,0.05); color: #1c1c1e; font-weight: 800; font-size: 22px; pointer-events: auto; display: flex; align-items: center; gap: 10px; }
+
+        .glass-tag { 
+            background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.5);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); color: #1c1c1e; font-weight: 800; font-size: 22px; pointer-events: auto;
+            transition: transform 0.2s, color 0.2s;
+            display: flex; align-items: center; gap: 10px;
+        }
+        
         .ui-icon { width: 32px; height: 32px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
+
         #lives { display: flex; gap: 6px; margin-bottom: 5px; }
         .life { width: 28px; height: 28px; background-size: contain; background-repeat: no-repeat; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
         #p-wrap { width: 160px; height: 6px; background: rgba(255,255,255,0.3); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); }
         #p-bar { width: 0%; height: 100%; transition: 0.3s; }
-        .gold-pop { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #FFD700; font-size: 60px; font-weight: 900; text-shadow: 0 0 10px rgba(255, 215, 0, 1), 0 0 20px rgba(255, 165, 0, 0.8), 2px 2px 0px #fff; pointer-events: none; z-index: 2000; font-family: 'Arial', sans-serif; animation: goldBounce 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
-        @keyframes goldBounce { 0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); } 15% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); } 100% { opacity: 0; transform: translate(calc(45vw - 50%), calc(-45vh - 50%)) scale(0.5); } }
-        .card { position: absolute; background-repeat: no-repeat; background-position: center; display: flex; align-items: center; justify-content: center; cursor: pointer; box-sizing: border-box; transition: filter .3s, transform .2s; background-color: transparent; border: none; }
+
+        /* Золотая анимация */
+        .gold-pop {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: #FFD700; font-size: 60px; font-weight: 900;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 1), 0 0 20px rgba(255, 165, 0, 0.8), 2px 2px 0px #fff;
+            pointer-events: none; z-index: 2000; font-family: 'Arial', sans-serif;
+            animation: goldBounce 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        @keyframes goldBounce {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3); }
+            15% { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
+            100% { opacity: 0; transform: translate(calc(45vw - 50%), calc(-45vh - 50%)) scale(0.5); }
+        }
+
+        /* Карточки */
+        .card {
+            position: absolute; background-repeat: no-repeat; background-position: center; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; box-sizing: border-box; transition: filter .3s, transform .2s; background-color: transparent; border: none;
+        }
         .filter-shadow { filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2)); }
         .card.sel { transform: scale(1.1); filter: drop-shadow(0 0 15px rgba(255,255,255,0.9)) drop-shadow(0 0 20px rgba(0,122,255,0.6)); z-index: 50; }
         .card.bad { filter: drop-shadow(0 0 15px rgba(255,59,48,0.9)); animation: shake 0.4s; }
         .card.good { filter: drop-shadow(0 0 15px rgba(52,199,89,0.9)); }
         @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-5px);} 75% {transform: translateX(5px);} }
-        .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 2000; background: rgba(0,0,0,0.2); backdrop-filter: blur(15px); }
+
+        /* Окна */
+        .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 2000; background: rgba(0,0,0,0.2); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); }
         .glass-box { background: rgba(255,255,255,0.85); padding: 30px; border-radius: 32px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.5); text-align: center; max-width: 300px; width: 80%; animation: pop 0.4s cubic-bezier(0.17, 0.89, 0.32, 1.27); }
         @keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .glass-box img { max-height: 140px; border-radius: 20px; margin-bottom: 15px; display: none; margin-inline: auto; }
@@ -32,223 +63,305 @@
         .btn-ios { padding: 14px; border-radius: 18px; border: none; font-weight: 700; font-size: 17px; color: #fff; width: 100%; cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,0.15); transition: 0.2s; }
         .btn-ios:active { transform: scale(0.96); }
         #fb { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); width: 150px; height: 150px; z-index: 1000; transition: 0.3s; pointer-events: none; }
-        #level-badge { font-size: 12px; text-transform: uppercase; color: #007aff; background: rgba(255,255,255,0.8); padding: 4px 8px; border-radius: 8px; margin-bottom: 5px; font-weight: 800; letter-spacing: 1px; }
-        #error-msg { position: fixed; bottom: 0; left: 0; width: 100%; background: red; color: white; padding: 10px; z-index: 99999; display: none; font-size: 12px; }
     </style>
-    
-    <script>
-    var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",n="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$",e={};function t(r,o){if(!e[r]){e[r]={};for(var n=0;n<r.length;n++)e[r][r.charAt(n)]=n}return e[r][o]}var i={compressToEncodedURIComponent:function(r){return null==r?"":i._compress(r,6,function(r){return o.charAt(r)})},decompressFromEncodedURIComponent:function(o){return null==o?"":""==o?null:i._decompress(o.length,32,function(n){return t(r,o.charAt(n))})},_compress:function(r,o,n){if(null==r)return"";var e,t,i,a={},p={},u="",c="",l="",s=2,f=3,h=2,d=[],v=0,m=0;for(i=0;i<r.length;i+=1)if(u=r.charAt(i),Object.prototype.hasOwnProperty.call(a,u)||(a[u]=f++,p[u]=!0,c=u),l=c+u,Object.prototype.hasOwnProperty.call(a,l))c=l;else{if(Object.prototype.hasOwnProperty.call(p,c)){if(c.charCodeAt(0)<256){for(e=0;e<h;e++)v<<=1,m==o-1?(m=0,d.push(n(v)),v=0):m++;for(t=c.charCodeAt(0),e=0;e<8;e++)v=v<<1|1&t,m==o-1?(m=0,d.push(n(v)),v=0):m++,t>>=1}else{for(t=1,e=0;e<h;e++)v=v<<1|t,m==o-1?(m=0,d.push(n(v)),v=0):m++,t=0;for(t=c.charCodeAt(0),e=0;e<16;e++)v=v<<1|1&t,m==o-1?(m=0,d.push(n(v)),v=0):m++,t>>=1}s--,0==s&&(s=Math.pow(2,h),h++),delete p[c]}else for(t=a[c],e=0;e<h;e++)v=v<<1|1&t,m==o-1?(m=0,d.push(n(v)),v=0):m++,t>>=1;s--,0==s&&(s=Math.pow(2,h),h++),a[l]=f++,c=String(u)}if(""!==c){if(Object.prototype.hasOwnProperty.call(p,c)){if(c.charCodeAt(0)<256){for(e=0;e<h;e++)v<<=1,m==o-1?(m=0,d.push(n(v)),v=0):m++;for(t=c.charCodeAt(0),e=0;e<8;e++)v=v<<1|1&t,m==o-1?(m=0,d.push(n(v)),v=0):m++,t>>=1}else{for(t=1,e=0;e<h;e++)v=v<<1|t,m==o-1?(m=0,d.push(n(v)),v=0):m++,t=0;for(t=c.charCodeAt(0),e=0;e<16;e++)v=v<<1|1&t,m==o-1?(m=0,d.push(n(v)),v=0):m++,t>>=1}s--,0==s&&(s=Math.pow(2,h),h++),delete p[c]}else for(t=a[c],e=0;e<h;e++)v=v<<1|1&t,m==o-1?(m=0,d.push(n(v)),v=0):m++,t>>=1;s--,0==s&&(s=Math.pow(2,h),h++)}for(t=2,e=0;e<h;e++)v=v<<1|1&t,m==o-1?(m=0,d.push(n(v)),v=0):m++,t>>=1;for(;;){if(v<<=1,m==o-1){d.push(n(v));break}m++}return d.join("")},_decompress:function(o,n,e){var t,i,a,p,u,c,l,s=[],f=4,h=4,d=3,v="",m=[],A={val:e(0),position:n,index:1};for(t=0;t<3;t++)s[t]=t;for(a=0,u=Math.pow(2,2),c=1;c!=u;)p=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),a|=(p>0?1:0)*c,c<<=1;switch(a){case 0:for(a=0,u=Math.pow(2,8),c=1;c!=u;)p=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),a|=(p>0?1:0)*c,c<<=1;l=r(a);break;case 1:for(a=0,u=Math.pow(2,16),c=1;c!=u;)p=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),a|=(p>0?1:0)*c,c<<=1;l=r(a);break;case 2:return""}for(s[3]=l,i=l,m.push(l);;){if(A.index>o)return"";for(a=0,u=Math.pow(2,d),c=1;c!=u;)p=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),a|=(p>0?1:0)*c,c<<=1;switch(l=a){case 0:for(a=0,u=Math.pow(2,8),c=1;c!=u;)p=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),a|=(p>0?1:0)*c,c<<=1;s[h++]=r(a),l=h-1,f--;break;case 1:for(a=0,u=Math.pow(2,16),c=1;c!=u;)p=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),a|=(p>0?1:0)*c,c<<=1;s[h++]=r(a),l=h-1,f--;break;case 2:return m.join("")}if(0==f&&(f=Math.pow(2,d),d++),s[l])v=s[l];else{if(l!==h)return null;v=i+i.charAt(0)}m.push(v),s[h++]=i+v.charAt(0),f--,i=v,0==f&&(f=Math.pow(2,d),d++)}}};return i}();
-    </script>
-
-    <script>
-    var confetti={maxCount:150,speed:2,frameInterval:15,alpha:1,gradient:!1,start:null,stop:null,toggle:null,pause:null,resume:null,togglePause:null,remove:null,isPaused:null,isRunning:null};!function(){confetti.start=function(){var a=document.createElement("canvas");a.style.position="fixed",a.style.top="0px",a.style.left="0px",a.style.pointerEvents="none",a.style.zIndex="9999",a.width=window.innerWidth,a.height=window.innerHeight,document.body.appendChild(a);var b=a.getContext("2d"),c=[];function d(){var a=Math.random()*window.innerWidth,b=Math.random()*window.innerHeight-window.innerHeight,d=Math.random()*360,e=Math.random()*(10-5)+5,f=Math.random()*(10-5)+5,g=Math.random()*(.5-.2)+.2,h=Math.random()*(.5-.2)+.2,i=["#f44336","#e91e63","#9c27b0","#673ab7","#3f51b5","#2196f3","#03a9f4","#00bcd4","#009688","#4caf50","#8bc34a","#cddc39","#ffeb3b","#ffc107","#ff9800","#ff5722","#795548"];c.push({x:a,y:b,w:e,h:f,color:i[Math.floor(Math.random()*i.length)],rotation:d,vx:g,vy:h})}for(var e=0;e<150;e++)d();!function d(){b.clearRect(0,0,window.innerWidth,window.innerHeight);for(var e=0;e<c.length;e++){var f=c[e];f.y+=f.vy+2,f.x+=f.vx,f.rotation+=f.vx,b.save(),b.translate(f.x+f.w/2,f.y+f.h/2),b.rotate(f.rotation*Math.PI/180),b.fillStyle=f.color,b.fillRect(-f.w/2,-f.h/2,f.w,f.h),b.restore(),f.y>window.innerHeight&&(c[e]={x:Math.random()*window.innerWidth,y:-10,w:f.w,h:f.h,color:f.color,rotation:f.rotation,vx:f.vx,vy:f.vy})}requestAnimationFrame(d)}()}}();
-    </script>
 </head>
 <body>
-    <div id="error-msg"></div>
     <div id="ui">
-        <div class="ui-group ui-left"><div id="timer-box" class="glass-tag" style="display:none;"><img id="icon-time" class="ui-icon"><span id="timer-val">00:00</span></div></div>
-        <div class="ui-group ui-center"><div id="level-badge" style="display:none;">УРОВЕНЬ 1</div><div id="lives"></div><div id="p-wrap"><div id="p-bar"></div></div></div>
-        <div class="ui-group ui-right"><div id="score-box" class="glass-tag"><img id="icon-score" class="ui-icon"><span id="score-val">0</span></div></div>
+        <div class="ui-group ui-left">
+            <div id="timer-box" class="glass-tag" style="display:none;">
+                <img id="icon-time" class="ui-icon">
+                <span id="timer-val">00:00</span>
+            </div>
+        </div>
+        
+        <div class="ui-group ui-center">
+            <div id="lives"></div>
+            <div id="p-wrap"><div id="p-bar"></div></div>
+        </div>
+        
+        <div class="ui-group ui-right">
+            <div id="score-box" class="glass-tag">
+                <img id="icon-score" class="ui-icon">
+                <span id="score-val">0</span>
+            </div>
+        </div>
     </div>
+
     <div id="game"></div><img id="fb">
+
     <div id="start-screen" class="overlay"><div class="glass-box"><h1 id="st-t"></h1><p id="st-d"></p><button id="st-b" class="btn-ios" onclick="startGame()"></button></div></div>
     <div id="win-screen" class="overlay" style="display:none;"><div class="glass-box"><img id="wi-img"><h1 id="wt"></h1><p id="wd"></p><button class="btn-ios rb" onclick="location.reload()"></button></div></div>
-    <div id="level-screen" class="overlay" style="display:none;"><div class="glass-box"><img id="lvl-img" style="display:block"><h1 style="color:#007aff">Уровень пройден!</h1><p>Готов к следующему?</p><button class="btn-ios" onclick="nextLevel()">ДАЛЬШЕ >></button></div></div>
     <div id="lose-screen" class="overlay" style="display:none;"><div class="glass-box"><img id="li-img"><h1 id="lt"></h1><p id="ld"></p><button class="btn-ios rb" onclick="location.reload()"></button></div></div>
     <div id="timeout-screen" class="overlay" style="display:none;"><div class="glass-box"><img id="to-img" style="display:block"><h1 id="to-t"></h1><p id="to-d"></p><button class="btn-ios" id="to-b" onclick="closeTimeout()"></button></div></div>
 
 <script>
-    try {
-        const params = new URLSearchParams(window.location.search);
-        const get = (n, d) => { let v = params.get(n); return (v===null||v==='null'||v==='') ? d : v; };
+    const params = new URLSearchParams(window.location.search);
+    const get = (n, d) => { let v = params.get(n); return (v===null||v==='null'||v==='') ? d : v; };
+    
+    const BASE_URL = "https://natashagodlevskaya16021995-ux.github.io/para.proba4/";
+    const SOUND_BASE = BASE_URL + "sounds/";
+    
+    const DEFAULTS = {
+        winPopup: 'https://media.tenor.com/423qsjyZqSsAAAAi/yes.gif', losePopup: 'https://media.tenor.com/Va6g-Dh5pSkAAAAi/bunny-nope.gif', life: 'https://media.tenor.com/iNdYjrgY90MAAAAi/red-heart-bumping.gif', 
+        winScreen: 'https://media.tenor.com/CuKhzQTvzV0AAAAi/%D0%BA%D0%BE%D1%82%D1%91%D0%BD%D0%BE%D0%BA-%D0%B3%D0%B0%D0%B2-kitten-named-woof.gif', loseScreen: 'https://media.tenor.com/I5bwJxpmFAsAAAAi/crying-sad.gif',
+        toImg: 'https://media.tenor.com/eLdxy73pAQcAAAAi/cant-wait-countdown.gif',
+        butterfly: BASE_URL + 'images/babochka.png',
+        snd_timeout: SOUND_BASE + 'time.mp3',
+        iconTime: 'https://media.tenor.com/IGjQ2m8Wh7QAAAAi/clock.gif',
+        iconScore: 'https://media.tenor.com/_TEE7xOQXMoAAAAi/trophy-activity.gif'
+    };
+
+    function playSound(file) {
+        try {
+            let param = 's_' + file.replace('.mp3', '');
+            let custom = get(param, '');
+            if (custom && (custom.includes('.gif') || custom.includes('.png'))) custom = '';
+            if (file === 'time.mp3' && !custom) custom = DEFAULTS.snd_timeout;
+            let src = custom ? custom : (SOUND_BASE + file);
+            new Audio(src).play().catch(()=>{});
+        } catch(e) {}
+    }
+
+    function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+
+    const font = get('font', 'Arial');
+    const effect = get('effect', '');
+    if (font !== 'Arial' || effect) {
+        const link = document.createElement('link'); link.rel = 'stylesheet';
+        let url = `https://fonts.googleapis.com/css?family=${font.replace(/ /g, '+')}`;
+        if (effect) url += `&effect=${effect.replace('font-effect-', '')}`;
+        link.href = url; document.head.appendChild(link);
+    }
+    document.body.style.fontFamily = `'${font}', sans-serif`;
+
+    const pColor = get('pcolor', '#007aff');
+    document.querySelectorAll('.btn-ios, #p-bar').forEach(el => el.style.background = pColor);
+    
+    // Тексты
+    document.getElementById('st-t').innerText = get('st_t', 'Найди пары'); document.getElementById('st-d').innerText = get('st_d', 'Успехов!'); document.getElementById('st-b').innerText = get('st_b', 'ИГРАТЬ');
+    document.getElementById('to-t').innerText = get('to_t', 'Время вышло!'); document.getElementById('to-d').innerText = get('to_d', 'Но ты можешь закончить.'); document.getElementById('to-b').innerText = 'ПРОДОЛЖИТЬ';
+    document.getElementById('to-img').src = get('to_i') || DEFAULTS.toImg;
+    document.getElementById('icon-time').src = get('icon_time') || DEFAULTS.iconTime;
+    document.getElementById('icon-score').src = get('icon_score') || DEFAULTS.iconScore;
+
+    document.getElementById('wt').innerText = get('wt', 'Победа!'); document.getElementById('wd').innerText = get('wd', 'Молодец!');
+    document.getElementById('lt').innerText = get('lt', 'Ой!'); document.getElementById('ld').innerText = get('ld', 'Попробуй еще раз');
+    document.querySelectorAll('.rb').forEach(b => b.innerText = get('rb', 'ЗАНОВО'));
+
+    const finalWinImg = get('wi') || DEFAULTS.winScreen; if(finalWinImg) { let i=document.getElementById('wi-img'); i.src=finalWinImg; i.style.display='block'; }
+    const finalLoseImg = get('li') || DEFAULTS.loseScreen; if(finalLoseImg) { let i=document.getElementById('li-img'); i.src=finalLoseImg; i.style.display='block'; }
+
+    let score = 0, combo = 0, timeLimit = parseInt(get('time', 0)), timerInterval;
+    let allData = []; try { allData = JSON.parse(get('pairs', '[]')); } catch(e) {}
+
+    function updateScore(pts) {
+        score = Math.max(0, score + pts);
+        const sb = document.getElementById('score-box'); document.getElementById('score-val').innerText = score;
+        if (pts > 0) {
+            const floating = document.createElement('div'); floating.className = 'gold-pop'; floating.innerText = '+' + pts;
+            document.body.appendChild(floating); setTimeout(() => floating.remove(), 1200);
+        } else {
+            sb.style.color = '#ff3b30'; sb.style.transform = 'scale(1.1)'; setTimeout(() => { sb.style.color = '#1c1c1e'; sb.style.transform = 'scale(1)'; }, 300);
+        }
+    }
+    function formatTime(s) { let m = Math.floor(s / 60); let sec = s % 60; return `${m}:${sec < 10 ? '0' : ''}${sec}`; }
+
+    const cSize = parseInt(get('csize', 140));
+    const lifeUrl = get('lifeimg') || DEFAULTS.life;
+    
+    function renderLives() {
+        const lDiv = document.getElementById('lives'); lDiv.innerHTML = '';
+        for(let i=0; i<3; i++) lDiv.innerHTML += `<div class="life" style="background-image:url('${lifeUrl}')"></div>`;
+    }
+    renderLives();
+
+    const tx = parseInt(get('tx', 0)); const ty = parseInt(get('ty', 0));
+    const useDefBg = get('def_bg') === '1', customBg = get('cimg', '');
+    const finalBg = useDefBg ? DEFAULTS.butterfly : customBg;
+    const bgC = get('bg_c', 'rgba(255,255,255,0.8)'), bC = get('b_c', '#ffffff'), bW = get('b_w', '1'), bR = get('b_r', '20');
+
+    let active = [], deck = [], lives = 3, found = 0, selected = [], cards = [], gameStarted = false, inputBlocked = false;
+    let pairsLimit = parseInt(get('limit', 3));
+    let baseSpeed = parseFloat(get('speed', 2));
+
+    function buildDeck() {
+        let base = [...allData]; shuffle(base);
+        let count = Math.min(pairsLimit, base.length);
+        active = base.slice(0, count);
+        deck = [];
         
-        // --- ДАННЫЕ И ДЕФОЛТЫ ---
-        const BASE_URL = "https://natashagodlevskaya16021995-ux.github.io/para.proba4/";
-        const DEFAULTS = { 
-            winPopup:'https://media.tenor.com/423qsjyZqSsAAAAi/yes.gif', 
-            losePopup:'https://media.tenor.com/Va6g-Dh5pSkAAAAi/bunny-nope.gif', 
-            life:'https://media.tenor.com/iNdYjrgY90MAAAAi/red-heart-bumping.gif', 
-            winScreen:'https://media.tenor.com/CuKhzQTvzV0AAAAi/%D0%BA%D0%BE%D1%82%D1%91%D0%BD%D0%BE%D0%BA-%D0%B3%D0%B0%D0%B2-kitten-named-woof.gif', 
-            loseScreen:'https://media.tenor.com/I5bwJxpmFAsAAAAi/crying-sad.gif', 
-            toImg:'https://media.tenor.com/eLdxy73pAQcAAAAi/cant-wait-countdown.gif', 
-            levelImg:'https://media.tenor.com/d622fi2hsp4AAAAi/good-job-clapping.gif', 
-            butterfly: BASE_URL+'images/babochka.png', 
-            snd_timeout: BASE_URL+'sounds/time.mp3', 
-            iconTime:'https://media.tenor.com/IGjQ2m8Wh7QAAAAi/clock.gif', 
-            iconScore:'https://media.tenor.com/_TEE7xOQXMoAAAAi/trophy-activity.gif' 
-        };
-
-        function playSound(file) { try { let p='s_'+file.replace('.mp3',''); let c=get(p,''); if(file==='time.mp3' && !c) c=DEFAULTS.snd_timeout; let src=c?c:(BASE_URL+'sounds/'+file); new Audio(src).play().catch(()=>{}); } catch(e){} }
-        function shuffle(arr) { for(let i=arr.length-1; i>0; i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i], arr[j]]=[arr[j], arr[i]]; } return arr; }
-
-        const font = get('font', 'Arial'); const effect = get('effect', '');
-        if (font !== 'Arial' || effect) { const l = document.createElement('link'); l.rel = 'stylesheet'; let u = `https://fonts.googleapis.com/css?family=${font.replace(/ /g, '+')}`; if(effect) u += `&effect=${effect.replace('font-effect-', '')}`; l.href = u; document.head.appendChild(l); }
-        document.body.style.fontFamily = `'${font}', sans-serif`;
-
-        const pColor = get('pcolor', '#007aff');
-        document.querySelectorAll('.btn-ios, #p-bar, #level-badge').forEach(el => { if(el.id==='level-badge') el.style.color=pColor; else el.style.background=pColor; });
-
-        document.getElementById('st-t').innerText = get('st_t', 'Найди пары'); document.getElementById('st-d').innerText = get('st_d', 'Будь осторожен, есть лишние карточки.'); document.getElementById('st-b').innerText = get('st_b', 'ИГРАТЬ');
-        document.getElementById('to-t').innerText = get('to_t', 'Время вышло!'); document.getElementById('to-d').innerText = get('to_d', 'Но ты можешь закончить.'); document.getElementById('to-b').innerText = 'ПРОДОЛЖИТЬ';
-        document.getElementById('to-img').src = get('to_i') || DEFAULTS.toImg; document.getElementById('icon-time').src = get('icon_time') || DEFAULTS.iconTime; document.getElementById('icon-score').src = get('icon_score') || DEFAULTS.iconScore; document.getElementById('lvl-img').src = DEFAULTS.levelImg;
-        document.getElementById('wt').innerText = get('wt', 'Победа!'); document.getElementById('wd').innerText = get('wd', 'Молодец!'); document.getElementById('lt').innerText = get('lt', 'Ой!'); document.getElementById('ld').innerText = get('ld', 'Попробуй еще раз');
-        document.querySelectorAll('.rb').forEach(b => b.innerText = get('rb', 'ЗАНОВО'));
-
-        const finalWinImg = get('wi') || DEFAULTS.winScreen; if(finalWinImg) { document.getElementById('wi-img').src=finalWinImg; document.getElementById('wi-img').style.display='block'; }
-        const finalLoseImg = get('li') || DEFAULTS.loseScreen; if(finalLoseImg) { document.getElementById('li-img').src=finalLoseImg; document.getElementById('li-img').style.display='block'; }
-
-        let currentLevel=1, score=0, combo=0, timeLimit=parseInt(get('time',0)), timerInterval;
-        const isCampaign=get('campaign')==='1', maxLevels=parseInt(get('levels',100)), cSize=parseInt(get('csize',140));
-        let pairsLimit=parseInt(get('limit',2)), baseSpeed=parseFloat(get('speed',2));
+        active.forEach((p, i) => { 
+            deck.push({t:p.a, dest:p.b, id:i}); 
+            deck.push({t:p.b, dest:p.a, id:i}); 
+        });
         
-        // --- ЗАГРУЗКА ДАННЫХ (ВСЕЯДНАЯ) ---
-        let allData=[]; 
-        try { 
-            const r = get('pairs',''); 
-            if(r) { 
-                // Сначала пробуем распаковать (для новых ссылок)
-                let decompressed = LZString.decompressFromEncodedURIComponent(r);
-                if(decompressed && (decompressed.startsWith('[') || decompressed.startsWith('{'))) {
-                    allData = JSON.parse(decompressed);
-                } else {
-                    // Если не вышло - читаем как есть (для старых или простых ссылок)
-                    allData = JSON.parse(r);
-                }
-            } 
-        } catch(e){ allData=[]; console.error(e); }
+        const activeText = new Set(); active.forEach(p => { activeText.add(String(p.a)); activeText.add(String(p.b)); });
+        let trapPool = [];
+        base.slice(count).forEach(p => { const pick = Math.random() > 0.5 ? p.a : p.b; if (!activeText.has(String(pick))) trapPool.push(pick); });
+        trapPool = Array.from(new Set(trapPool)); shuffle(trapPool);
+        
+        const finalTraps = trapPool.slice(0, Math.max(0, parseInt(get('extraCount', 0))));
+        finalTraps.forEach((t, i) => { deck.push({t: t, id: -100 - i}); });
+        shuffle(deck); 
+    }
 
-        if(isCampaign) { document.getElementById('level-badge').style.display='block'; document.getElementById('level-badge').innerText='УРОВЕНЬ '+currentLevel; }
-
-        function updateScore(pts) { score=Math.max(0,score+pts); document.getElementById('score-val').innerText=score; if(pts>0){ const f=document.createElement('div'); f.className='gold-pop'; f.innerText='+'+pts; document.body.appendChild(f); setTimeout(()=>f.remove(),1200); } else { const sb=document.getElementById('score-box'); sb.style.color='#ff3b30'; sb.style.transform='scale(1.1)'; setTimeout(()=>{sb.style.color='#1c1c1e';sb.style.transform='scale(1)'},300); } }
-        function formatTime(s) { let m=Math.floor(s/60), sec=s%60; return `${m}:${sec<10?'0':''}${sec}`; }
-        function renderLives() { const l=document.getElementById('lives'); l.innerHTML=''; for(let i=0;i<3;i++) l.innerHTML+=`<div class="life" style="background-image:url('${get('lifeimg')||DEFAULTS.life}')"></div>`; }
+    function initGame() {
+        buildDeck();
+        document.getElementById('game').innerHTML = '';
+        cards = []; placed = []; selected = []; found = 0;
+        document.getElementById('p-bar').style.width = '0%';
+        lives = 3; 
         renderLives();
-
-        const tx=parseInt(get('tx',0)), ty=parseInt(get('ty',0));
-        const useDefBg=get('def_bg')==='1', customBg=get('cimg','');
-        const finalBg=useDefBg?DEFAULTS.butterfly:customBg;
-        const bgC=get('bg_c','rgba(255,255,255,0.8)'), bC=get('b_c','#ffffff'), bW=get('b_w','1'), bR=get('b_r','20');
-        let active=[], deck=[], lives=3, found=0, selected=[], cards=[], gameStarted=false, inputBlocked=false;
-
-        function buildDeck() {
-            if (!allData || allData.length === 0) return;
-            let base=[...allData]; shuffle(base); let count=Math.min(pairsLimit, base.length); active=base.slice(0,count); deck=[];
-            active.forEach((p,i) => { deck.push({t:p.a, dest:p.b, id:i}); deck.push({t:p.b, dest:p.a, id:i}); });
-            const activeText=new Set(); active.forEach(p=>{ activeText.add(String(p.a)); activeText.add(String(p.b)); });
-            let trapPool=[]; base.slice(count).forEach(p=>{ if(!activeText.has(String(p.a))) trapPool.push(p.a); if(!activeText.has(String(p.b))) trapPool.push(p.b); });
-            shuffle(trapPool); const finalTraps=trapPool.slice(0, Math.max(0, parseInt(params.has('extraCount')?get('extraCount',0):get('extra_c',0))));
-            finalTraps.forEach((t,i) => { deck.push({t:t, id:-100-i}); }); shuffle(deck);
+        
+        clearInterval(timerInterval);
+        timeLimit = parseInt(get('time', 0)); 
+        if(timeLimit > 0) {
+            document.getElementById('timer-box').style.display = 'flex'; 
+            document.getElementById('timer-val').innerText = formatTime(timeLimit);
+        } else {
+            document.getElementById('timer-box').style.display = 'none';
         }
 
-        // --- УМНАЯ ПРОВЕРКА ---
-        function normalize(s) {
-            if(!s) return '';
-            let str = String(s).trim();
-            // Чистим математику: тире, икс, запятую, равно
-            let mathStr = str.replace(/x|X|х/g, '*').replace(/:/g, '/').replace(/=/g, '').replace(/–|—|−/g, '-').replace(',', '.').replace(/\s/g, '');
-            if (/^[\d\+\-\*\/\.\(\)]+$/.test(mathStr)) {
-                try {
-                    let result = new Function('return ' + mathStr)();
-                    if (isFinite(result)) return String(result); 
-                } catch(e) {}
-            }
-            // Иначе просто текст
-            return str.toLowerCase().replace(/\s+/g, ' '); 
-        }
+        const bounds0 = getBounds();
 
-        function initGame() {
-            buildDeck(); document.getElementById('game').innerHTML=''; cards=[]; selected=[]; found=0; document.getElementById('p-bar').style.width='0%'; lives=3; renderLives();
-            clearInterval(timerInterval); timeLimit=parseInt(get('time',0)); 
-            if(timeLimit>0) { document.getElementById('timer-box').style.display='flex'; document.getElementById('timer-val').innerText=formatTime(timeLimit); } else document.getElementById('timer-box').style.display='none';
+        deck.forEach(item => {
+            const el = document.createElement('div'); el.className = `card ${get('effect','')}`;
             
-            if (deck.length === 0) return; 
+            // Сохраняем данные для проверки
+            el.dataset.t = item.t;
+            el.dataset.dest = item.dest || '';
 
-            deck.forEach(item => {
-                const el=document.createElement('div'); el.className=`card ${get('effect','')}`;
-                el.dataset.t=item.t;
-                if(!finalBg) el.classList.add('filter-shadow');
-                const isImg=String(item.t).startsWith('http');
-                let s=`width:${cSize}px; height:${cSize}px; font-size:${get('fsize','28px')}; color:${get('fcolor','#333')};`;
-                if(finalBg) s+=`background-image:url('${finalBg}'); background-size:contain; border:none; box-shadow:none;`; 
-                else if(isImg) s+=`background:transparent; border:none; box-shadow:none;`; 
-                else s+=`background:${bgC}; border:${bW}px solid ${bC}; border-radius:${bR}px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);`;
-                el.style.cssText=s;
-                if(isImg) el.innerHTML=`<img src="${item.t}" style="max-width:90%; max-height:90%; object-fit:contain; pointer-events:none;">`;
-                else el.innerHTML=`<span style="display:block; transform: translate(${tx}px, ${ty}px)">${item.t}</span>`;
+            if (!finalBg) el.classList.add('filter-shadow');
+            const isImg = String(item.t).startsWith('http');
+            
+            let s = `width:${cSize}px; height:${cSize}px; font-size:${get('fsize','28px')}; color:${get('fcolor','#333')};`;
+            if (finalBg) s += `background-image:url('${finalBg}'); background-size:contain; border:none; box-shadow:none;`; 
+            else if (isImg) s += `background:transparent; border:none; box-shadow:none;`; 
+            else s += `background:${bgC}; border:${bW}px solid ${bC}; border-radius:${bR}px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);`;
 
-                el.onclick = () => {
-                    if(el.dataset.done || inputBlocked) return;
-                    if(el.classList.contains('sel')) { el.classList.remove('sel'); selected=selected.filter(s=>s.el!==el); return; }
-                    if(selected.length<2) {
-                        playSound('click.mp3'); el.classList.add('sel'); selected.push({el, id:item.id, t:item.t});
-                        if(selected.length===2) {
-                            const [s1, s2]=selected, fb=document.getElementById('fb'); inputBlocked=true;
-                            
-                            let isMatch = false;
-                            // 1. По ID (родная пара)
-                            if (s1.id === s2.id) { isMatch = true; } 
-                            // 2. По значению (математика или текст)
-                            else {
-                                const v1 = normalize(s1.t); const v2 = normalize(s2.t);
-                                if (v1 === v2) isMatch = true;
-                            }
+            el.style.cssText = s;
+            if (isImg) el.innerHTML = `<img src="${item.t}" style="max-width:90%; max-height:90%; object-fit:contain; pointer-events:none;">`;
+            else el.innerHTML = `<span style="display:block; transform: translate(${tx}px, ${ty}px)">${item.t}</span>`;
 
-                            if(isMatch) {
-                                found++; combo++; updateScore(100+(combo-1)*20); fb.src=get('winimg')||DEFAULTS.winPopup;
-                                document.getElementById('p-bar').style.width=(found/active.length)*100+'%';
-                                setTimeout(()=>{ selected.forEach(s=>{ s.el.style.display='none'; s.el.dataset.done='1'; s.el.classList.remove('sel'); }); selected=[]; inputBlocked=false;
-                                    if(found===active.length) { clearInterval(timerInterval); if(isCampaign && currentLevel<maxLevels && pairsLimit<allData.length) { playSound('win.mp3'); setTimeout(()=>document.getElementById('level-screen').style.display='flex',800); } else { playSound('win.mp3'); confetti.start(); setTimeout(()=>document.getElementById('win-screen').style.display='flex',800); } } else playSound('ok.mp3');
-                                }, 500);
-                            } else {
-                                lives--; combo=0; updateScore(-50); fb.src=get('loseimg')||DEFAULTS.losePopup;
-                                const icons=document.querySelectorAll('.life'); if(icons[lives]) icons[lives].style.opacity='0.1';
-                                const wrong=[...selected]; wrong.forEach(s=>{ s.el.classList.add('bad'); s.el.classList.remove('sel'); }); selected=[];
-                                setTimeout(()=>{ wrong.forEach(s=>s.el.classList.remove('bad')); inputBlocked=false; }, 2000);
-                                if(lives<=0) { clearInterval(timerInterval); playSound('lose.mp3'); setTimeout(()=>document.getElementById('lose-screen').style.display='flex',800); } else playSound('bad.mp3');
-                            }
-                            fb.style.transform='translate(-50%, -50%) scale(1)'; setTimeout(()=>fb.style.transform='translate(-50%, -50%) scale(0)', 600);
+            el.onclick = () => {
+                if (el.dataset.done || inputBlocked) return;
+                if (el.classList.contains('sel')) { el.classList.remove('sel'); selected = selected.filter(s => s.el !== el); return; }
+
+                if (selected.length < 2) {
+                    playSound('click.mp3'); el.classList.add('sel'); 
+                    selected.push({el, id: item.id, t: item.t, dest: item.dest});
+                    
+                    if (selected.length === 2) {
+                        const [s1, s2] = selected, fb = document.getElementById('fb');
+                        inputBlocked = true; 
+                        
+                        // === УМНАЯ ПРОВЕРКА V31 ===
+                        let isMatch = false;
+                        if (s1.id === s2.id) isMatch = true; // Родная пара
+                        else if (s1.dest && s1.dest === s2.t) isMatch = true; // A ищет B
+                        else if (s2.dest && s2.dest === s1.t) isMatch = true; // B ищет A
+
+                        if (isMatch) {
+                            found++; combo++; updateScore(100 + (combo-1)*20); 
+                            fb.src = get('winimg') || DEFAULTS.winPopup;
+                            document.getElementById('p-bar').style.width = (found/active.length)*100 + '%';
+                            setTimeout(() => {
+                                selected.forEach(s => { s.el.style.display = 'none'; s.el.dataset.done = '1'; s.el.classList.remove('sel'); });
+                                selected = []; inputBlocked = false;
+                                
+                                if (found === active.length) { 
+                                    clearInterval(timerInterval);
+                                    playSound('win.mp3');
+                                    // Конфетти (если загрузились)
+                                    try { confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } }); } catch(e){}
+                                    setTimeout(() => document.getElementById('win-screen').style.display='flex', 800);
+                                }
+                                else playSound('ok.mp3');
+                            }, 500);
+                        } else {
+                            lives--; combo = 0; updateScore(-50);
+                            fb.src = get('loseimg') || DEFAULTS.losePopup;
+                            const icons = document.querySelectorAll('.life'); if(icons[lives]) icons[lives].style.opacity = '0.1';
+                            const wrongCards = [...selected];
+                            wrongCards.forEach(s => { s.el.classList.add('bad'); s.el.classList.remove('sel'); });
+                            selected = []; 
+                            setTimeout(() => { wrongCards.forEach(s => s.el.classList.remove('bad')); inputBlocked = false; }, 2000);
+                            if (lives <= 0) { clearInterval(timerInterval); playSound('lose.mp3'); setTimeout(()=>document.getElementById('lose-screen').style.display='flex', 800); }
+                            else playSound('bad.mp3');
                         }
+                        fb.style.transform = 'translate(-50%, -50%) scale(1)';
+                        setTimeout(() => fb.style.transform = 'translate(-50%, -50%) scale(0)', 600);
                     }
-                };
-                const pos=placeNonOverlapping(placed); placed.push(pos);
-                cards.push({el, x:pos.x, y:pos.y, vx:(Math.random()-0.5)*baseSpeed, vy:(Math.random()-0.5)*baseSpeed});
-                document.getElementById('game').appendChild(el);
-            });
-        }
+                }
+            };
+            const pos = placeNonOverlapping(placed); placed.push(pos);
+            cards.push({ el, x: pos.x, y: pos.y, vx: (Math.random()-0.5)*baseSpeed, vy: (Math.random()-0.5)*baseSpeed });
+            document.getElementById('game').appendChild(el);
+        });
+    }
 
-        function placeNonOverlapping(ex) {
-            const b={minX:0, maxX:window.innerWidth-cSize, minY:document.getElementById('ui').getBoundingClientRect().bottom+10, maxY:window.innerHeight-cSize};
-            for(let t=0;t<200;t++){ const x=b.minX+Math.random()*(b.maxX-b.minX), y=b.minY+Math.random()*(b.maxY-b.minY); let ok=true; for(const p of ex){ if((p.x-x)**2+(p.y-y)**2<(cSize+20)**2){ok=false;break;}} if(ok) return {x,y}; } return {x:b.minX, y:b.minY};
-        }
+    function getBounds() { const ui = document.getElementById('ui').getBoundingClientRect(); return { minX: 0, maxX: Math.max(0, window.innerWidth - cSize), minY: Math.min(window.innerHeight - cSize, Math.ceil(ui.bottom + 10)), maxY: Math.max(0, window.innerHeight - cSize) }; }
+    let placed = [];
 
-        function startGame() { document.getElementById('start-screen').style.display='none'; initGame(); startTimer(); gameStarted=true; loop(); }
-        function startTimer() { if(timeLimit>0) timerInterval=setInterval(()=>{ timeLimit--; document.getElementById('timer-val').innerText=formatTime(timeLimit); if(timeLimit<=0) { clearInterval(timerInterval); playSound('time.mp3'); document.getElementById('timeout-screen').style.display='flex'; } }, 1000); }
-        function nextLevel() { document.getElementById('level-screen').style.display='none'; currentLevel++; pairsLimit++; baseSpeed+=0.2; document.getElementById('level-badge').innerText='УРОВЕНЬ '+currentLevel; initGame(); startTimer(); }
-        function closeTimeout() { document.getElementById('timeout-screen').style.display='none'; }
-        function loop() {
-            if(!gameStarted) return;
-            const repD=cSize+20, repS=0.5;
-            for(let i=0;i<cards.length;i++) for(let j=i+1;j<cards.length;j++) {
-                const c1=cards[i], c2=cards[j]; if(c1.el.dataset.done||c2.el.dataset.done) continue;
-                const dx=c1.x-c2.x, dy=c1.y-c2.y, d=Math.sqrt(dx*dx+dy*dy);
-                if(d<repD && d>0) { const f=(repD-d)/repD, fx=(dx/d)*f*repS, fy=(dy/d)*f*repS; c1.vx+=fx; c1.vy+=fy; c2.vx-=fx; c2.vy-=fy; }
+    function placeNonOverlapping(existing) {
+        const bounds0 = getBounds();
+        const repulsionDist = cSize + 20; 
+        for (let t = 0; t < 220; t++) {
+            const x = bounds0.minX + Math.random() * (bounds0.maxX - bounds0.minX);
+            const y = bounds0.minY + Math.random() * (bounds0.maxY - bounds0.minY);
+            let ok = true; 
+            for (const p of existing) { 
+                if ((p.x-x)**2 + (p.y-y)**2 < repulsionDist**2) { ok = false; break; } 
             }
-            const b={minX:0, maxX:window.innerWidth-cSize, minY:document.getElementById('ui').getBoundingClientRect().bottom+10, maxY:window.innerHeight-cSize};
-            cards.forEach(c=>{
-                if(c.el.dataset.done || c.el.classList.contains('sel')) return;
-                const ms=baseSpeed*2; c.vx=Math.max(-ms,Math.min(ms,c.vx)); c.vy=Math.max(-ms,Math.min(ms,c.vy));
-                if(Math.abs(c.vx)>baseSpeed) c.vx*=0.95; if(Math.abs(c.vy)>baseSpeed) c.vy*=0.95;
-                c.x+=c.vx; c.y+=c.vy;
-                if(c.x<b.minX){c.x=b.minX;c.vx*=-1;} if(c.x>b.maxX){c.x=b.maxX;c.vx*=-1;}
-                if(c.y<b.minY){c.y=b.minY;c.vy*=-1;} if(c.y>b.maxY){c.y=b.maxY;c.vy*=-1;}
-                c.el.style.transform=`translate(${c.x}px,${c.y}px)`;
-            });
-            requestAnimationFrame(loop);
+            if (ok) return { x, y };
+        } 
+        return { x: bounds0.minX, y: bounds0.minY };
+    }
+
+    function startGame() {
+        document.getElementById('start-screen').style.display='none'; 
+        initGame();
+        startTimer();
+        gameStarted = true;
+        loop();
+    }
+
+    function startTimer() {
+        if(timeLimit > 0) {
+            timerInterval = setInterval(() => {
+                timeLimit--; document.getElementById('timer-val').innerText = formatTime(timeLimit);
+                if(timeLimit <= 0) { clearInterval(timerInterval); playSound('time.mp3'); document.getElementById('timeout-screen').style.display='flex'; }
+            }, 1000);
         }
-    } catch (e) {
-        document.getElementById('error-msg').innerText = "КРИТИЧЕСКАЯ ОШИБКА: " + e.message;
-        document.getElementById('error-msg').style.display = 'block';
+    }
+
+    function closeTimeout() { document.getElementById('timeout-screen').style.display='none'; }
+    
+    function loop() {
+        if(!gameStarted) return;
+        const repulsionDist = cSize + 20, repulsionStrength = 0.5;
+        for (let i = 0; i < cards.length; i++) {
+            for (let j = i + 1; j < cards.length; j++) {
+                const c1 = cards[i], c2 = cards[j];
+                if(c1.el.dataset.done || c2.el.dataset.done) continue;
+                const dx = c1.x - c2.x, dy = c1.y - c2.y, dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < repulsionDist && dist > 0) {
+                    const force = (repulsionDist - dist) / repulsionDist, fx = (dx / dist) * force * repulsionStrength, fy = (dy / dist) * force * repulsionStrength;
+                    c1.vx += fx; c1.vy += fy; c2.vx -= fx; c2.vy -= fy;
+                }
+            }
+        }
+        const b = getBounds();
+        cards.forEach(c => {
+            if(c.el.dataset.done || (c.el.classList.contains('sel'))) return;
+            const maxSpeed = baseSpeed * 2; c.vx = Math.max(-maxSpeed, Math.min(maxSpeed, c.vx)); c.vy = Math.max(-maxSpeed, Math.min(maxSpeed, c.vy));
+            if (Math.abs(c.vx) > baseSpeed) c.vx *= 0.95; if (Math.abs(c.vy) > baseSpeed) c.vy *= 0.95;
+            c.x += c.vx; c.y += c.vy;
+            if(c.x < b.minX) { c.x = b.minX; c.vx *= -1; } if(c.x > b.maxX) { c.x = b.maxX; c.vx *= -1; }
+            if(c.y < b.minY) { c.y = b.minY; c.vy *= -1; } if(c.y > b.maxY) { c.y = b.maxY; c.vy *= -1; }
+            c.el.style.transform = `translate(${c.x}px, ${c.y}px)`;
+        });
+        requestAnimationFrame(loop);
     }
 </script>
 </body>
