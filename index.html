@@ -96,9 +96,9 @@
     let pairsLimit=parseInt(get('limit',2)), baseSpeed=parseFloat(get('speed',2));
     
     // --- ПРОСТАЯ ЗАГРУЗКА БЕЗ СЖАТИЯ (V43) ---
+    // Это исправляет "белый экран"
     let allData=[]; 
     try { 
-        // Просто читаем JSON из URL. Это работает ВСЕГДА.
         allData = JSON.parse(get('pairs', '[]')); 
     } catch(e){ allData=[]; }
 
@@ -129,13 +129,16 @@
     function normalize(s) {
         if(!s) return '';
         let str = String(s).trim();
+        // Чистим математику (заменяем тире, запятые, иксы)
         let mathStr = str.replace(/x|X|х/g, '*').replace(/:/g, '/').replace(/=/g, '').replace(/–|—|−/g, '-').replace(',', '.').replace(/\s/g, '');
+        // Если это пример - решаем
         if (/^[\d\+\-\*\/\.\(\)]+$/.test(mathStr)) {
             try {
                 let result = new Function('return ' + mathStr)();
                 if (isFinite(result)) return String(result); 
             } catch(e) {}
         }
+        // Если это слово - возвращаем текст
         return str.toLowerCase().replace(/\s+/g, ' '); 
     }
 
@@ -166,7 +169,9 @@
                         const [s1, s2]=selected, fb=document.getElementById('fb'); inputBlocked=true;
                         
                         let isMatch = false;
+                        // 1. Проверка по ID (Если это пара из одной строки редактора)
                         if (s1.id === s2.id) { isMatch = true; } 
+                        // 2. Проверка по ЗНАЧЕНИЮ (Для математики или одинаковых слов)
                         else {
                             const v1 = normalize(s1.t); const v2 = normalize(s2.t);
                             if (v1 === v2) isMatch = true;
