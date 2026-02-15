@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
     <link id="font-link" rel="stylesheet" href="">
     <style>
         body { margin: 0; overflow: hidden; background: transparent; height: 100vh; width: 100vw; font-family: -apple-system, sans-serif; user-select: none; }
@@ -96,22 +95,11 @@
     const isCampaign=get('campaign')==='1', maxLevels=parseInt(get('levels',100)), cSize=parseInt(get('csize',140));
     let pairsLimit=parseInt(get('limit',2)), baseSpeed=parseFloat(get('speed',2));
     
-    // --- ЗАГРУЗКА ДАННЫХ (V42 FIX) ---
+    // --- ПРОСТАЯ ЗАГРУЗКА БЕЗ СЖАТИЯ (V43) ---
     let allData=[]; 
     try { 
-        const r = get('pairs',''); 
-        if(r){ 
-            if (typeof LZString !== 'undefined') {
-                const decompressed = LZString.decompressFromEncodedURIComponent(r);
-                if (decompressed && (decompressed.startsWith('[') || decompressed.startsWith('{'))) {
-                    allData = JSON.parse(decompressed);
-                } else {
-                    allData = JSON.parse(r);
-                }
-            } else {
-                allData = JSON.parse(r);
-            }
-        } 
+        // Просто читаем JSON из URL. Это работает ВСЕГДА.
+        allData = JSON.parse(get('pairs', '[]')); 
     } catch(e){ allData=[]; }
 
     if(isCampaign) { document.getElementById('level-badge').style.display='block'; document.getElementById('level-badge').innerText='УРОВЕНЬ '+currentLevel; }
@@ -137,20 +125,17 @@
         finalTraps.forEach((t,i) => { deck.push({t:t, id:-100-i}); }); shuffle(deck);
     }
 
-    // --- УНИВЕРСАЛЬНАЯ ПРОВЕРКА (V42) ---
+    // --- УНИВЕРСАЛЬНАЯ ПРОВЕРКА ---
     function normalize(s) {
         if(!s) return '';
         let str = String(s).trim();
-        // Чистим математику
         let mathStr = str.replace(/x|X|х/g, '*').replace(/:/g, '/').replace(/=/g, '').replace(/–|—|−/g, '-').replace(',', '.').replace(/\s/g, '');
-        // Если это только цифры и знаки -> решаем
         if (/^[\d\+\-\*\/\.\(\)]+$/.test(mathStr)) {
             try {
                 let result = new Function('return ' + mathStr)();
                 if (isFinite(result)) return String(result); 
             } catch(e) {}
         }
-        // Иначе возвращаем текст без лишних пробелов, маленький регистр
         return str.toLowerCase().replace(/\s+/g, ' '); 
     }
 
@@ -181,15 +166,9 @@
                         const [s1, s2]=selected, fb=document.getElementById('fb'); inputBlocked=true;
                         
                         let isMatch = false;
-                        
-                        // 1. СОВПАДЕНИЕ ПО ID (Если это пара "Слово - Перевод" из одной строки)
-                        if (s1.id === s2.id) {
-                            isMatch = true;
-                        } 
-                        // 2. СОВПАДЕНИЕ ПО ЗНАЧЕНИЮ (Если это "2+2" и "4")
+                        if (s1.id === s2.id) { isMatch = true; } 
                         else {
-                            const v1 = normalize(s1.t);
-                            const v2 = normalize(s2.t);
+                            const v1 = normalize(s1.t); const v2 = normalize(s2.t);
                             if (v1 === v2) isMatch = true;
                         }
 
