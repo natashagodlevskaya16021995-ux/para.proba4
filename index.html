@@ -44,7 +44,9 @@
         <div class="ui-group ui-center"><div id="level-badge" style="display:none;">УРОВЕНЬ 1</div><div id="lives"></div><div id="p-wrap"><div id="p-bar"></div></div></div>
         <div class="ui-group ui-right"><div id="score-box" class="glass-tag"><img id="icon-score" class="ui-icon"><span id="score-val">0</span></div></div>
     </div>
+    
     <div id="game"></div><img id="fb">
+
     <div id="start-screen" class="overlay"><div class="glass-box"><h1 id="st-t"></h1><p id="st-d"></p><button id="st-b" class="btn-ios" onclick="startGame()"></button></div></div>
     <div id="win-screen" class="overlay" style="display:none;"><div class="glass-box"><img id="wi-img"><h1 id="wt"></h1><p id="wd"></p><button class="btn-ios rb" onclick="location.reload()"></button></div></div>
     <div id="level-screen" class="overlay" style="display:none;"><div class="glass-box"><img id="lvl-img" style="display:block"><h1 style="color:#007aff">Уровень пройден!</h1><p>Готов к следующему?</p><button class="btn-ios" onclick="nextLevel()">ДАЛЬШЕ >></button></div></div>
@@ -55,7 +57,19 @@
     const params = new URLSearchParams(window.location.search);
     const get = (n, d) => { let v = params.get(n); return (v===null||v==='null'||v==='') ? d : v; };
     const BASE_URL = "https://natashagodlevskaya16021995-ux.github.io/para.proba4/";
-    const DEFAULTS = { winPopup:'https://media.tenor.com/423qsjyZqSsAAAAi/yes.gif', losePopup:'https://media.tenor.com/Va6g-Dh5pSkAAAAi/bunny-nope.gif', life:'https://media.tenor.com/iNdYjrgY90MAAAAi/red-heart-bumping.gif', winScreen:'https://media.tenor.com/CuKhzQTvzV0AAAAi/%D0%BA%D0%BE%D1%82%D1%91%D0%BD%D0%BE%D0%BA-%D0%B3%D0%B0%D0%B2-kitten-named-woof.gif', loseScreen:'https://media.tenor.com/I5bwJxpmFAsAAAAi/crying-sad.gif', toImg:'https://media.tenor.com/eLdxy73pAQcAAAAi/cant-wait-countdown.gif', levelImg:'https://media.tenor.com/d622fi2hsp4AAAAi/good-job-clapping.gif', butterfly: BASE_URL+'images/babochka.png', snd_timeout: BASE_URL+'sounds/time.mp3', iconTime:'https://media.tenor.com/IGjQ2m8Wh7QAAAAi/clock.gif', iconScore:'https://media.tenor.com/_TEE7xOQXMoAAAAi/trophy-activity.gif' };
+    const DEFAULTS = { 
+        winPopup:'https://media.tenor.com/423qsjyZqSsAAAAi/yes.gif', 
+        losePopup:'https://media.tenor.com/Va6g-Dh5pSkAAAAi/bunny-nope.gif', 
+        life:'https://media.tenor.com/iNdYjrgY90MAAAAi/red-heart-bumping.gif', 
+        winScreen:'https://media.tenor.com/CuKhzQTvzV0AAAAi/%D0%BA%D0%BE%D1%82%D1%91%D0%BD%D0%BE%D0%BA-%D0%B3%D0%B0%D0%B2-kitten-named-woof.gif', 
+        loseScreen:'https://media.tenor.com/I5bwJxpmFAsAAAAi/crying-sad.gif', 
+        toImg:'https://media.tenor.com/eLdxy73pAQcAAAAi/cant-wait-countdown.gif', 
+        levelImg:'https://media.tenor.com/d622fi2hsp4AAAAi/good-job-clapping.gif', 
+        butterfly: BASE_URL+'images/babochka.png', 
+        snd_timeout: BASE_URL+'sounds/time.mp3', 
+        iconTime:'https://media.tenor.com/IGjQ2m8Wh7QAAAAi/clock.gif', 
+        iconScore:'https://media.tenor.com/_TEE7xOQXMoAAAAi/trophy-activity.gif' 
+    };
 
     function playSound(file) { try { let p='s_'+file.replace('.mp3',''); let c=get(p,''); if(file==='time.mp3' && !c) c=DEFAULTS.snd_timeout; let src=c?c:(BASE_URL+'sounds/'+file); new Audio(src).play().catch(()=>{}); } catch(e){} }
     function shuffle(arr) { for(let i=arr.length-1; i>0; i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i], arr[j]]=[arr[j], arr[i]]; } return arr; }
@@ -67,7 +81,9 @@
     const pColor = get('pcolor', '#007aff');
     document.querySelectorAll('.btn-ios, #p-bar, #level-badge').forEach(el => { if(el.id==='level-badge') el.style.color=pColor; else el.style.background=pColor; });
 
-    document.getElementById('st-t').innerText = get('st_t', 'Найди пары'); document.getElementById('st-d').innerText = get('st_d', 'Будь осторожен, есть лишние карточки.'); document.getElementById('st-b').innerText = get('st_b', 'ИГРАТЬ');
+    document.getElementById('st-t').innerText = get('st_t', 'Найди пары'); 
+    document.getElementById('st-d').innerText = get('st_d', 'Будь осторожен, есть лишние карточки.'); 
+    document.getElementById('st-b').innerText = get('st_b', 'ИГРАТЬ');
     document.getElementById('to-t').innerText = get('to_t', 'Время вышло!'); document.getElementById('to-d').innerText = get('to_d', 'Но ты можешь закончить.'); document.getElementById('to-b').innerText = 'ПРОДОЛЖИТЬ';
     document.getElementById('to-img').src = get('to_i') || DEFAULTS.toImg; document.getElementById('icon-time').src = get('icon_time') || DEFAULTS.iconTime; document.getElementById('icon-score').src = get('icon_score') || DEFAULTS.iconScore; document.getElementById('lvl-img').src = DEFAULTS.levelImg;
     document.getElementById('wt').innerText = get('wt', 'Победа!'); document.getElementById('wd').innerText = get('wd', 'Молодец!'); document.getElementById('lt').innerText = get('lt', 'Ой!'); document.getElementById('ld').innerText = get('ld', 'Попробуй еще раз');
@@ -80,14 +96,21 @@
     const isCampaign=get('campaign')==='1', maxLevels=parseInt(get('levels',100)), cSize=parseInt(get('csize',140));
     let pairsLimit=parseInt(get('limit',2)), baseSpeed=parseFloat(get('speed',2));
     
-    // --- ИСПРАВЛЕННАЯ ЗАГРУЗКА ДАННЫХ ---
+    // --- ЗАГРУЗКА ДАННЫХ (V42 FIX) ---
     let allData=[]; 
     try { 
-        const r=get('pairs',''); 
+        const r = get('pairs',''); 
         if(r){ 
-            const decompressed = LZString.decompressFromEncodedURIComponent(r);
-            if (decompressed) allData = JSON.parse(decompressed);
-            else allData = JSON.parse(r);
+            if (typeof LZString !== 'undefined') {
+                const decompressed = LZString.decompressFromEncodedURIComponent(r);
+                if (decompressed && (decompressed.startsWith('[') || decompressed.startsWith('{'))) {
+                    allData = JSON.parse(decompressed);
+                } else {
+                    allData = JSON.parse(r);
+                }
+            } else {
+                allData = JSON.parse(r);
+            }
         } 
     } catch(e){ allData=[]; }
 
@@ -105,32 +128,30 @@
     let active=[], deck=[], lives=3, found=0, selected=[], cards=[], gameStarted=false, inputBlocked=false;
 
     function buildDeck() {
+        if (!allData || allData.length === 0) return;
         let base=[...allData]; shuffle(base); let count=Math.min(pairsLimit, base.length); active=base.slice(0,count); deck=[];
-        
-        // ВАЖНО: Мы сохраняем "родную" пару (id)
-        active.forEach((p,i) => { 
-            deck.push({t:p.a, dest:p.b, id:i}); 
-            deck.push({t:p.b, dest:p.a, id:i}); 
-        });
-        
+        active.forEach((p,i) => { deck.push({t:p.a, dest:p.b, id:i}); deck.push({t:p.b, dest:p.a, id:i}); });
         const activeText=new Set(); active.forEach(p=>{ activeText.add(String(p.a)); activeText.add(String(p.b)); });
         let trapPool=[]; base.slice(count).forEach(p=>{ if(!activeText.has(String(p.a))) trapPool.push(p.a); if(!activeText.has(String(p.b))) trapPool.push(p.b); });
         shuffle(trapPool); const finalTraps=trapPool.slice(0, Math.max(0, parseInt(params.has('extraCount')?get('extraCount',0):get('extra_c',0))));
         finalTraps.forEach((t,i) => { deck.push({t:t, id:-100-i}); }); shuffle(deck);
     }
 
-    // --- ФУНКЦИЯ ДЛЯ МАТЕМАТИКИ ---
+    // --- УНИВЕРСАЛЬНАЯ ПРОВЕРКА (V42) ---
     function normalize(s) {
         if(!s) return '';
         let str = String(s).trim();
-        let mathStr = str.replace(/–|—|−/g, '-').replace(',', '.').replace(/\s/g, '');
+        // Чистим математику
+        let mathStr = str.replace(/x|X|х/g, '*').replace(/:/g, '/').replace(/=/g, '').replace(/–|—|−/g, '-').replace(',', '.').replace(/\s/g, '');
+        // Если это только цифры и знаки -> решаем
         if (/^[\d\+\-\*\/\.\(\)]+$/.test(mathStr)) {
             try {
                 let result = new Function('return ' + mathStr)();
-                if (isFinite(result)) return String(result);
+                if (isFinite(result)) return String(result); 
             } catch(e) {}
         }
-        return str.toLowerCase().replace(/\s+/g, ' ');
+        // Иначе возвращаем текст без лишних пробелов, маленький регистр
+        return str.toLowerCase().replace(/\s+/g, ' '); 
     }
 
     function initGame() {
@@ -140,7 +161,7 @@
         
         deck.forEach(item => {
             const el=document.createElement('div'); el.className=`card ${get('effect','')}`;
-            el.dataset.t=item.t; el.dataset.dest=item.dest||'';
+            el.dataset.t=item.t;
             if(!finalBg) el.classList.add('filter-shadow');
             const isImg=String(item.t).startsWith('http');
             let s=`width:${cSize}px; height:${cSize}px; font-size:${get('fsize','28px')}; color:${get('fcolor','#333')};`;
@@ -155,26 +176,21 @@
                 if(el.dataset.done || inputBlocked) return;
                 if(el.classList.contains('sel')) { el.classList.remove('sel'); selected=selected.filter(s=>s.el!==el); return; }
                 if(selected.length<2) {
-                    playSound('click.mp3'); el.classList.add('sel'); selected.push({el, id:item.id, t:item.t, dest:item.dest});
+                    playSound('click.mp3'); el.classList.add('sel'); selected.push({el, id:item.id, t:item.t});
                     if(selected.length===2) {
                         const [s1, s2]=selected, fb=document.getElementById('fb'); inputBlocked=true;
                         
                         let isMatch = false;
                         
-                        // 1. ЖЕЛЕЗНАЯ ПРОВЕРКА ПО ID
-                        // Если это та самая пара, которую ввели в редакторе (в одной строке) - это точно совпадение.
-                        if(s1.id === s2.id) {
+                        // 1. СОВПАДЕНИЕ ПО ID (Если это пара "Слово - Перевод" из одной строки)
+                        if (s1.id === s2.id) {
                             isMatch = true;
                         } 
-                        // 2. ЕСЛИ ID РАЗНЫЕ (но вдруг значения совпадают?)
+                        // 2. СОВПАДЕНИЕ ПО ЗНАЧЕНИЮ (Если это "2+2" и "4")
                         else {
-                            const val1 = normalize(s1.t);
-                            const val2 = normalize(s2.t);
-                            const dest1 = normalize(s1.dest);
-                            const dest2 = normalize(s2.dest);
-
-                            if (dest1 && dest1 === val2) isMatch = true;
-                            else if (dest2 && dest2 === val1) isMatch = true;
+                            const v1 = normalize(s1.t);
+                            const v2 = normalize(s2.t);
+                            if (v1 === v2) isMatch = true;
                         }
 
                         if(isMatch) {
