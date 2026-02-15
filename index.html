@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
     <link id="font-link" rel="stylesheet" href="">
     <style>
         body { margin: 0; overflow: hidden; background: transparent; height: 100vh; width: 100vw; font-family: -apple-system, sans-serif; user-select: none; }
@@ -149,7 +150,6 @@
         else el.style.background = pColor;
     });
     
-    // Тексты (ОБНОВЛЕНО ПО УКАЗАНИЮ)
     document.getElementById('st-t').innerText = get('st_t', 'Найди пары'); 
     document.getElementById('st-d').innerText = get('st_d', 'Будь осторожен, есть лишние карточки.'); 
     document.getElementById('st-b').innerText = get('st_b', 'ИГРАТЬ');
@@ -168,13 +168,22 @@
 
     let currentLevel = 1;
     const isCampaign = get('campaign') === '1';
-    // Читаем максимальное количество уровней (по дефолту 100, если не задано, чтоб шло пока есть слова)
     const maxLevels = parseInt(get('levels', 100)); 
     let pairsLimit = parseInt(get('limit', 2));
     let baseSpeed = parseFloat(get('speed', 2));
     
     let score = 0, combo = 0, timeLimit = parseInt(get('time', 0)), timerInterval;
-    let allData = []; try { allData = JSON.parse(get('pairs', '[]')); } catch(e) {}
+    
+    // --- РАСПАКОВКА ДАННЫХ (СЖАТИЕ) ---
+    let allData = []; 
+    try { 
+        const raw = get('pairs', '');
+        if (raw) {
+            // Сначала пробуем распаковать, если не выйдет - читаем как есть
+            if(raw.startsWith('[{')) allData = JSON.parse(raw);
+            else allData = JSON.parse(LZString.decompressFromEncodedURIComponent(raw));
+        }
+    } catch(e) { allData = []; }
     
     if(isCampaign) {
         document.getElementById('level-badge').style.display = 'block';
@@ -215,7 +224,6 @@
         active = base.slice(0, count);
         deck = [];
         
-        // ВАЖНО: Умная логика (dest) сохранена
         active.forEach((p, i) => { 
             deck.push({t:p.a, dest:p.b, id:i}); 
             deck.push({t:p.b, dest:p.a, id:i}); 
@@ -253,7 +261,7 @@
         deck.forEach(item => {
             const el = document.createElement('div'); el.className = `card ${get('effect','')}`;
             
-            // Сохраняем данные для проверки
+            // Сохраняем данные
             el.dataset.t = item.t;
             el.dataset.dest = item.dest || '';
 
@@ -281,11 +289,14 @@
                         const [s1, s2] = selected, fb = document.getElementById('fb');
                         inputBlocked = true; 
                         
-                        // === УМНАЯ ПРОВЕРКА (ВОССТАНОВЛЕНА) ===
+                        // === УМНАЯ ПРОВЕРКА С ОЧИСТКОЙ (TRIM) ===
+                        // Это решает проблему "5" != "5 "
+                        const clean = (str) => String(str || '').trim().toLowerCase();
+                        
                         let isMatch = false;
-                        if (s1.id === s2.id) isMatch = true; // Родная пара
-                        else if (s1.dest && s1.dest === s2.t) isMatch = true; // A ищет B
-                        else if (s2.dest && s2.dest === s1.t) isMatch = true; // B ищет A
+                        if (s1.id === s2.id) isMatch = true; 
+                        else if (s1.dest && clean(s1.dest) === clean(s2.t)) isMatch = true; 
+                        else if (s2.dest && clean(s2.dest) === clean(s1.t)) isMatch = true; 
 
                         if (isMatch) {
                             found++; combo++; updateScore(100 + (combo-1)*20); 
@@ -297,7 +308,6 @@
                                 
                                 if (found === active.length) { 
                                     clearInterval(timerInterval);
-                                    // ПРОВЕРКА: Если кампания И не достигнут лимит уровней И есть еще слова
                                     if (isCampaign && currentLevel < maxLevels && pairsLimit < allData.length) {
                                         playSound('win.mp3');
                                         setTimeout(() => document.getElementById('level-screen').style.display='flex', 800);
