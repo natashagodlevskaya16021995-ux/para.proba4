@@ -255,11 +255,44 @@
                         const [s1, s2] = selected, fb = document.getElementById('fb');
                         inputBlocked = true; 
                         
-                        // === УМНАЯ ПРОВЕРКА V31 ===
+                        // === УМНАЯ ПРОВЕРКА V32 (MATH FIX) ===
                         let isMatch = false;
-                        if (s1.id === s2.id) isMatch = true; // Родная пара
-                        else if (s1.dest && s1.dest === s2.t) isMatch = true; // A ищет B
-                        else if (s2.dest && s2.dest === s1.t) isMatch = true; // B ищет A
+
+                        // Функция попытки посчитать математику
+                        const tryMath = (val) => {
+                            if (!val || typeof val !== 'string') return val;
+                            // Если есть цифры и операторы
+                            if (val.match(/[0-9]/) && val.match(/[\+\-\*\/]/)) {
+                                try {
+                                    // Опасный eval, но для простой игры допустимо.
+                                    // Меняем 'x' на '*' для удобства
+                                    let clean = val.replace(/x/g, '*').replace(/=/g, '');
+                                    return new Function('return ' + clean)();
+                                } catch(e) { return val; }
+                            }
+                            return val;
+                        };
+                        
+                        // Нормализация (убираем пробелы)
+                        const t1 = String(s1.t).trim();
+                        const t2 = String(s2.t).trim();
+                        const d1 = s1.dest ? String(s1.dest).trim() : null;
+                        const d2 = s2.dest ? String(s2.dest).trim() : null;
+
+                        // 1. Проверка по ID (если созданы парой)
+                        if (s1.id === s2.id && s1.id !== -100) {
+                            isMatch = true; 
+                        } 
+                        // 2. Проверка по значению (А ищет Б)
+                        else if (d1 === t2 || d2 === t1) {
+                            isMatch = true;
+                        }
+                        // 3. Математическая проверка (7-6 == 1)
+                        else {
+                            const m1 = tryMath(t1);
+                            const m2 = tryMath(t2);
+                            if (m1 == m2) isMatch = true;
+                        }
 
                         if (isMatch) {
                             found++; combo++; updateScore(100 + (combo-1)*20); 
@@ -272,7 +305,6 @@
                                 if (found === active.length) { 
                                     clearInterval(timerInterval);
                                     playSound('win.mp3');
-                                    // Конфетти (если загрузились)
                                     try { confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } }); } catch(e){}
                                     setTimeout(() => document.getElementById('win-screen').style.display='flex', 800);
                                 }
