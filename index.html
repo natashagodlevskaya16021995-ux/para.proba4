@@ -31,8 +31,7 @@
         /* Золотая анимация */
         .gold-pop {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            color: #FFD700; font-size: 60px; font-weight: 900;
-            text-shadow: 0 0 10px rgba(255, 215, 0, 1), 0 0 20px rgba(255, 165, 0, 0.8), 2px 2px 0px #fff;
+            color: #FFD700; font-size: 60px; font-weight: 900; text-shadow: 0 0 10px rgba(255, 215, 0, 1), 0 0 20px rgba(255, 165, 0, 0.8), 2px 2px 0px #fff;
             pointer-events: none; z-index: 2000; font-family: 'Arial', sans-serif;
             animation: goldBounce 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
         }
@@ -98,9 +97,8 @@
     const params = new URLSearchParams(window.location.search);
     const get = (n, d) => { let v = params.get(n); return (v===null||v==='null'||v==='') ? d : v; };
     
-    const BASE_URL = "https://natashagodlevskaya16021995-ux.github.io/para.proba4/";
+    const BASE_URL = "https://natashagodlevskaya16021995-ux.github.io/naidi-pary-2/";
     const SOUND_BASE = BASE_URL + "sounds/";
-    
     const DEFAULTS = {
         winPopup: 'https://media.tenor.com/423qsjyZqSsAAAAi/yes.gif', losePopup: 'https://media.tenor.com/Va6g-Dh5pSkAAAAi/bunny-nope.gif', life: 'https://media.tenor.com/iNdYjrgY90MAAAAi/red-heart-bumping.gif', 
         winScreen: 'https://media.tenor.com/CuKhzQTvzV0AAAAi/%D0%BA%D0%BE%D1%82%D1%91%D0%BD%D0%BE%D0%BA-%D0%B3%D0%B0%D0%B2-kitten-named-woof.gif', loseScreen: 'https://media.tenor.com/I5bwJxpmFAsAAAAi/crying-sad.gif',
@@ -110,7 +108,6 @@
         iconTime: 'https://media.tenor.com/IGjQ2m8Wh7QAAAAi/clock.gif',
         iconScore: 'https://media.tenor.com/_TEE7xOQXMoAAAAi/trophy-activity.gif'
     };
-
     function playSound(file) {
         try {
             let param = 's_' + file.replace('.mp3', '');
@@ -127,7 +124,8 @@
     const font = get('font', 'Arial');
     const effect = get('effect', '');
     if (font !== 'Arial' || effect) {
-        const link = document.createElement('link'); link.rel = 'stylesheet';
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
         let url = `https://fonts.googleapis.com/css?family=${font.replace(/ /g, '+')}`;
         if (effect) url += `&effect=${effect.replace('font-effect-', '')}`;
         link.href = url; document.head.appendChild(link);
@@ -147,39 +145,40 @@
     document.getElementById('wt').innerText = get('wt', 'Победа!'); document.getElementById('wd').innerText = get('wd', 'Молодец!');
     document.getElementById('lt').innerText = get('lt', 'Ой!'); document.getElementById('ld').innerText = get('ld', 'Попробуй еще раз');
     document.querySelectorAll('.rb').forEach(b => b.innerText = get('rb', 'ЗАНОВО'));
-
     const finalWinImg = get('wi') || DEFAULTS.winScreen; if(finalWinImg) { let i=document.getElementById('wi-img'); i.src=finalWinImg; i.style.display='block'; }
     const finalLoseImg = get('li') || DEFAULTS.loseScreen; if(finalLoseImg) { let i=document.getElementById('li-img'); i.src=finalLoseImg; i.style.display='block'; }
 
     let score = 0, combo = 0, timeLimit = parseInt(get('time', 0)), timerInterval;
-    let allData = []; try { allData = JSON.parse(get('pairs', '[]')); } catch(e) {}
+    let allData = [];
+    try { allData = JSON.parse(get('pairs', '[]')); } catch(e) {}
 
     function updateScore(pts) {
         score = Math.max(0, score + pts);
         const sb = document.getElementById('score-box'); document.getElementById('score-val').innerText = score;
         if (pts > 0) {
-            const floating = document.createElement('div'); floating.className = 'gold-pop'; floating.innerText = '+' + pts;
+            const floating = document.createElement('div');
+            floating.className = 'gold-pop'; floating.innerText = '+' + pts;
             document.body.appendChild(floating); setTimeout(() => floating.remove(), 1200);
         } else {
-            sb.style.color = '#ff3b30'; sb.style.transform = 'scale(1.1)'; setTimeout(() => { sb.style.color = '#1c1c1e'; sb.style.transform = 'scale(1)'; }, 300);
+            sb.style.color = '#ff3b30'; sb.style.transform = 'scale(1.1)';
+            setTimeout(() => { sb.style.color = '#1c1c1e'; sb.style.transform = 'scale(1)'; }, 300);
         }
     }
     function formatTime(s) { let m = Math.floor(s / 60); let sec = s % 60; return `${m}:${sec < 10 ? '0' : ''}${sec}`; }
 
     const cSize = parseInt(get('csize', 140));
     const lifeUrl = get('lifeimg') || DEFAULTS.life;
-    
     function renderLives() {
         const lDiv = document.getElementById('lives'); lDiv.innerHTML = '';
         for(let i=0; i<3; i++) lDiv.innerHTML += `<div class="life" style="background-image:url('${lifeUrl}')"></div>`;
     }
     renderLives();
 
-    const tx = parseInt(get('tx', 0)); const ty = parseInt(get('ty', 0));
+    const tx = parseInt(get('tx', 0));
+    const ty = parseInt(get('ty', 0));
     const useDefBg = get('def_bg') === '1', customBg = get('cimg', '');
     const finalBg = useDefBg ? DEFAULTS.butterfly : customBg;
     const bgC = get('bg_c', 'rgba(255,255,255,0.8)'), bC = get('b_c', '#ffffff'), bW = get('b_w', '1'), bR = get('b_r', '20');
-
     let active = [], deck = [], lives = 3, found = 0, selected = [], cards = [], gameStarted = false, inputBlocked = false;
     let pairsLimit = parseInt(get('limit', 3));
     let baseSpeed = parseFloat(get('speed', 2));
@@ -194,7 +193,6 @@
             deck.push({t:p.a, dest:p.b, id:i}); 
             deck.push({t:p.b, dest:p.a, id:i}); 
         });
-        
         const activeText = new Set(); active.forEach(p => { activeText.add(String(p.a)); activeText.add(String(p.b)); });
         let trapPool = [];
         base.slice(count).forEach(p => { const pick = Math.random() > 0.5 ? p.a : p.b; if (!activeText.has(String(pick))) trapPool.push(pick); });
@@ -202,7 +200,7 @@
         
         const finalTraps = trapPool.slice(0, Math.max(0, parseInt(get('extraCount', 0))));
         finalTraps.forEach((t, i) => { deck.push({t: t, id: -100 - i}); });
-        shuffle(deck); 
+        shuffle(deck);
     }
 
     function initGame() {
@@ -216,14 +214,13 @@
         clearInterval(timerInterval);
         timeLimit = parseInt(get('time', 0)); 
         if(timeLimit > 0) {
-            document.getElementById('timer-box').style.display = 'flex'; 
+            document.getElementById('timer-box').style.display = 'flex';
             document.getElementById('timer-val').innerText = formatTime(timeLimit);
         } else {
             document.getElementById('timer-box').style.display = 'none';
         }
 
         const bounds0 = getBounds();
-
         deck.forEach(item => {
             const el = document.createElement('div'); el.className = `card ${get('effect','')}`;
             
@@ -232,6 +229,7 @@
             el.dataset.dest = item.dest || '';
 
             if (!finalBg) el.classList.add('filter-shadow');
+       
             const isImg = String(item.t).startsWith('http');
             
             let s = `width:${cSize}px; height:${cSize}px; font-size:${get('fsize','28px')}; color:${get('fcolor','#333')};`;
@@ -266,7 +264,6 @@
                             clean = clean.replace(/x/g, '*').replace(/:/g, '/');
                             // 3. Удаляем всё лишнее
                             clean = clean.replace(/[^0-9\+\-\*\/\.\(\)]/g, '');
-                            
                             if (clean.length === 0) return val;
                             try {
                                 return new Function('return ' + clean)();
@@ -278,25 +275,34 @@
                         const t2 = String(s2.t).trim();
                         const d1 = s1.dest ? String(s1.dest).trim() : null;
                         const d2 = s2.dest ? String(s2.dest).trim() : null;
-
-                        // 1. Проверка по ID
+                        
+                        // 1. Проверка по ID (базовая)
                         if (s1.id === s2.id && s1.id !== -100) {
-                            isMatch = true; 
+                            isMatch = true;
                         } 
-                        // 2. Проверка по значению
+                        // 2. Проверка по прямому назначению
                         else if (d1 === t2 || d2 === t1) {
                             isMatch = true;
                         }
-                        // 3. Математика
+                        // 3. УМНАЯ КРОСС-ПРОВЕРКА (СУПЕР-ФИКС ДЛЯ ЛОВУШЕК)
+                        // Проверяем по ВСЕЙ БАЗЕ (allData), а не только по активным, 
+                        // потому что правильное слово могло выпасть как ловушка!
+                        else if (allData.some(p => 
+                            (String(p.a).trim().toLowerCase() === t1.toLowerCase() && String(p.b).trim().toLowerCase() === t2.toLowerCase()) || 
+                            (String(p.a).trim().toLowerCase() === t2.toLowerCase() && String(p.b).trim().toLowerCase() === t1.toLowerCase())
+                        )) {
+                            isMatch = true;
+                        }
+                        // 4. Математика (как запасной вариант)
                         else {
                             const m1 = tryMath(t1);
                             const m2 = tryMath(t2);
-                            // Используем нестрогое равенство (1 == "1")
-                            if (m1 == m2) isMatch = true;
+                            if (m1 != null && m2 != null && m1 == m2) isMatch = true;
                         }
 
                         if (isMatch) {
-                            found++; combo++; updateScore(100 + (combo-1)*20); 
+                            found++;
+                            combo++; updateScore(100 + (combo-1)*20); 
                             fb.src = get('winimg') || DEFAULTS.winPopup;
                             document.getElementById('p-bar').style.width = (found/active.length)*100 + '%';
                             setTimeout(() => {
@@ -312,12 +318,13 @@
                                 else playSound('ok.mp3');
                             }, 500);
                         } else {
-                            lives--; combo = 0; updateScore(-50);
+                            lives--;
+                            combo = 0; updateScore(-50);
                             fb.src = get('loseimg') || DEFAULTS.losePopup;
                             const icons = document.querySelectorAll('.life'); if(icons[lives]) icons[lives].style.opacity = '0.1';
                             const wrongCards = [...selected];
                             wrongCards.forEach(s => { s.el.classList.add('bad'); s.el.classList.remove('sel'); });
-                            selected = []; 
+                            selected = [];
                             setTimeout(() => { wrongCards.forEach(s => s.el.classList.remove('bad')); inputBlocked = false; }, 2000);
                             if (lives <= 0) { clearInterval(timerInterval); playSound('lose.mp3'); setTimeout(()=>document.getElementById('lose-screen').style.display='flex', 800); }
                             else playSound('bad.mp3');
@@ -333,7 +340,9 @@
         });
     }
 
-    function getBounds() { const ui = document.getElementById('ui').getBoundingClientRect(); return { minX: 0, maxX: Math.max(0, window.innerWidth - cSize), minY: Math.min(window.innerHeight - cSize, Math.ceil(ui.bottom + 10)), maxY: Math.max(0, window.innerHeight - cSize) }; }
+    function getBounds() { const ui = document.getElementById('ui').getBoundingClientRect();
+        return { minX: 0, maxX: Math.max(0, window.innerWidth - cSize), minY: Math.min(window.innerHeight - cSize, Math.ceil(ui.bottom + 10)), maxY: Math.max(0, window.innerHeight - cSize) };
+    }
     let placed = [];
 
     function placeNonOverlapping(existing) {
@@ -342,7 +351,7 @@
         for (let t = 0; t < 220; t++) {
             const x = bounds0.minX + Math.random() * (bounds0.maxX - bounds0.minX);
             const y = bounds0.minY + Math.random() * (bounds0.maxY - bounds0.minY);
-            let ok = true; 
+            let ok = true;
             for (const p of existing) { 
                 if ((p.x-x)**2 + (p.y-y)**2 < repulsionDist**2) { ok = false; break; } 
             }
